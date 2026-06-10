@@ -537,6 +537,8 @@ jQuery(document).ready(function ($) {
 	$('.mtfp-trigger-scan').on('click', function () {
 		const btn = $(this);
 		const originalHtml = btn.html();
+		const targetVal = $('#mtfp-scan-target').val();
+
 		btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> Scanning...');
 
 		$.ajax({
@@ -545,7 +547,8 @@ jQuery(document).ready(function ($) {
 			dataType: 'json',
 			data: {
 				action: 'mtfp_scan_theme',
-				nonce: manualTranslationsForPolylangAdminData.nonce
+				nonce: manualTranslationsForPolylangAdminData.nonce,
+				target: targetVal
 			},
 			success: function (response) {
 				if (response.success) {

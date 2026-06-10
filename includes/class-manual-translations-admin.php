@@ -268,7 +268,7 @@ class Manual_Translations_Admin {
 	}
 
 	/**
-	 * AJAX endpoint: Scan active theme files for gettext strings.
+	 * AJAX endpoint: Scan active theme or a specific plugin folder for gettext strings.
 	 */
 	public function ajax_scan_theme() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -276,9 +276,26 @@ class Manual_Translations_Admin {
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
-		$dirs = array( get_stylesheet_directory() );
-		if ( is_child_theme() ) {
-			$dirs[] = get_template_directory();
+		$target = isset( $_POST['target'] ) ? sanitize_text_field( wp_unslash( $_POST['target'] ) ) : 'theme';
+		$dirs = array();
+
+		if ( 'theme' === $target ) {
+			$dirs[] = get_stylesheet_directory();
+			if ( is_child_theme() ) {
+				$dirs[] = get_template_directory();
+			}
+		} elseif ( strpos( $target, 'plugin:' ) === 0 ) {
+			$plugin_folder = str_replace( 'plugin:', '', $target );
+			$plugin_folder = sanitize_file_name( $plugin_folder );
+			$plugin_dir = WP_PLUGIN_DIR . '/' . $plugin_folder;
+
+			if ( is_dir( $plugin_dir ) ) {
+				$dirs[] = $plugin_dir;
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Plugin directory not found.', 'manual-translations-for-polylang' ) ) );
+			}
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Invalid scan target parameter.', 'manual-translations-for-polylang' ) ) );
 		}
 
 		$found_strings = array();
@@ -587,16 +604,37 @@ class Manual_Translations_Admin {
 		?>
 		<div class="wrap mtfp-admin-wrap">
 			<!-- Header Title Row -->
-			<div class="mtfp-page-title-row">
+			<div class="mtfp-page-title-row" style="flex-wrap: wrap;">
 				<h1 class="wp-heading-inline"><?php esc_html_e( 'Manual Translations', 'manual-translations-for-polylang' ); ?></h1>
-				<button type="button" class="page-title-action mtfp-trigger-add-row">
+				<button type="button" class="page-title-action mtfp-trigger-add-row" style="margin-right: 8px;">
 					<span class="dashicons dashicons-plus"></span>
 					<?php esc_html_e( 'Add New Translation', 'manual-translations-for-polylang' ); ?>
 				</button>
-				<button type="button" class="page-title-action mtfp-trigger-scan" style="background: #0ea5e9; border-color: #0ea5e9; margin-left: 8px;">
-					<span class="dashicons dashicons-search"></span>
-					<?php esc_html_e( 'Scan Theme', 'manual-translations-for-polylang' ); ?>
-				</button>
+
+				<div class="mtfp-scan-group" style="display: inline-flex; align-items: center; gap: 8px;">
+					<select id="mtfp-scan-target" class="mtfp-select" style="height: 32px; padding: 4px 12px; font-weight: 500;">
+						<option value="theme"><?php esc_html_e( 'Scan Target: Active Theme', 'manual-translations-for-polylang' ); ?></option>
+						<?php
+						if ( ! function_exists( 'get_plugins' ) ) {
+							require_once ABSPATH . 'wp-admin/includes/plugin.php';
+						}
+						$all_plugins = get_plugins();
+						foreach ( $all_plugins as $plugin_file => $plugin_data ) {
+							$dir = dirname( $plugin_file );
+							if ( '.' !== $dir && '' !== $dir ) {
+								// Do not include this plugin itself
+								if ( strpos( $plugin_file, 'manual-translations-for-polylang' ) === false ) {
+									echo '<option value="plugin:' . esc_attr( $dir ) . '">' . sprintf( esc_html__( 'Scan Plugin: %s', 'manual-translations-for-polylang' ), esc_html( $plugin_data['Name'] ) ) . '</option>';
+								}
+							}
+						}
+						?>
+					</select>
+					<button type="button" class="page-title-action mtfp-trigger-scan" style="background: #0ea5e9; border-color: #0ea5e9; margin: 0;">
+						<span class="dashicons dashicons-search"></span>
+						<?php esc_html_e( 'Scan', 'manual-translations-for-polylang' ); ?>
+					</button>
+				</div>
 			</div>
 
 			<!-- Scan Results Container -->
