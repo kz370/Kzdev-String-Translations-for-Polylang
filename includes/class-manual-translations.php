@@ -113,7 +113,7 @@ class Manual_Translations {
 		// Localize translations map for script access
 		wp_localize_script(
 			'mtfp-frontend-translation',
-			'manualTranslationsData',
+			'manualTranslationsForPolylangData',
 			array(
 				'translations' => $translation_map,
 			)

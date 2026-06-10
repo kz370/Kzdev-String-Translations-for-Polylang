@@ -32,6 +32,8 @@ class Manual_Translations_Admin {
 		add_action( 'wp_ajax_mtfp_save_translation', array( $this, 'ajax_save_translation' ) );
 		add_action( 'wp_ajax_mtfp_delete_translation', array( $this, 'ajax_delete_translation' ) );
 		add_action( 'wp_ajax_mtfp_bulk_delete', array( $this, 'ajax_bulk_delete' ) );
+		add_action( 'wp_ajax_mtfp_scan_theme', array( $this, 'ajax_scan_theme' ) );
+		add_action( 'wp_ajax_mtfp_import_scanned', array( $this, 'ajax_import_scanned' ) );
 	}
 
 	/**
@@ -132,7 +134,7 @@ class Manual_Translations_Admin {
 		// Pass data and security nonces to JavaScript
 		wp_localize_script(
 			'mtfp-admin-scripts',
-			'mtfpAdminData',
+			'manualTranslationsForPolylangAdminData',
 			array(
 				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
 				'nonce'        => wp_create_nonce( 'mtfp_admin_nonce' ),
@@ -263,6 +265,139 @@ class Manual_Translations_Admin {
 		}
 
 		wp_send_json_error( array( 'message' => __( 'No translations were deleted.', 'manual-translations-for-polylang' ) ) );
+	}
+
+	/**
+	 * AJAX endpoint: Scan active theme files for gettext strings.
+	 */
+	public function ajax_scan_theme() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+		}
+		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
+
+		$dirs = array( get_stylesheet_directory() );
+		if ( is_child_theme() ) {
+			$dirs[] = get_template_directory();
+		}
+
+		$found_strings = array();
+		foreach ( $dirs as $dir ) {
+			$found_strings = array_merge( $found_strings, $this->scan_directory_for_strings( $dir ) );
+		}
+		$found_strings = array_unique( $found_strings );
+
+		// Filter out strings already in our database
+		$existing_data = $this->get_translations_data();
+		$existing_sources = array_map( 'strtolower', wp_list_pluck( $existing_data, 'source' ) );
+
+		$new_untranslated = array();
+		foreach ( $found_strings as $str ) {
+			if ( ! in_array( strtolower( $str ), $existing_sources, true ) ) {
+				$new_untranslated[] = $str;
+			}
+		}
+
+		// Sort strings alphabetically
+		sort( $new_untranslated );
+
+		wp_send_json_success( array(
+			'strings' => $new_untranslated,
+		) );
+	}
+
+	/**
+	 * Recursively scan directory for PHP files and extract gettext strings.
+	 */
+	private function scan_directory_for_strings( $dir ) {
+		$strings = array();
+		if ( ! is_dir( $dir ) ) {
+			return $strings;
+		}
+
+		$files = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $dir, RecursiveDirectoryIterator::SKIP_DOTS ),
+			RecursiveIteratorIterator::LEAVES_ONLY
+		);
+
+		// Match first argument of standard gettext functions: __, _e, esc_html__, esc_html_e, esc_attr__, esc_attr_e, _x, _ex
+		$pattern = '/\b(?:__|__|_e|esc_html__|esc_html_e|esc_attr__|esc_attr_e|_x|_ex)\(\s*([\'"])((?:\\\\|\\\\\1|(?!\1).)*)\1/s';
+
+		foreach ( $files as $file ) {
+			if ( $file->getExtension() !== 'php' ) {
+				continue;
+			}
+
+			$content = file_get_contents( $file->getRealPath() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			if ( empty( $content ) ) {
+				continue;
+			}
+
+			if ( preg_match_all( $pattern, $content, $matches ) ) {
+				if ( ! empty( $matches[2] ) ) {
+					foreach ( $matches[2] as $match ) {
+						// Strip slashes from escaped quotes inside strings
+						$str = stripcslashes( $match );
+						$str = trim( $str );
+						if ( strlen( $str ) > 1 && ! is_numeric( $str ) ) {
+							$strings[ $str ] = true;
+						}
+					}
+				}
+			}
+		}
+
+		return array_keys( $strings );
+	}
+
+	/**
+	 * AJAX endpoint: Import selected scanned strings.
+	 */
+	public function ajax_import_scanned() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+		}
+		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
+
+		$strings = isset( $_POST['strings'] ) ? map_deep( wp_unslash( $_POST['strings'] ), 'sanitize_text_field' ) : array();
+		if ( empty( $strings ) || ! is_array( $strings ) ) {
+			wp_send_json_error( array( 'message' => __( 'No strings selected.', 'manual-translations-for-polylang' ) ) );
+		}
+
+		$languages = $this->get_active_languages();
+		$lang_slugs = wp_list_pluck( $languages, 'slug' );
+		$data = $this->get_translations_data();
+		$imported = array();
+
+		foreach ( $strings as $source ) {
+			$source = trim( $source );
+			if ( '' === $source ) {
+				continue;
+			}
+
+			$hash = md5( $source );
+			if ( ! isset( $data[ $hash ] ) ) {
+				$data[ $hash ] = array(
+					'source'       => $source,
+					'translations' => array_fill_keys( $lang_slugs, '' ),
+				);
+				$imported[] = array(
+					'hash'         => $hash,
+					'source'       => $source,
+					'translations' => $data[ $hash ]['translations'],
+				);
+			}
+		}
+
+		if ( ! empty( $imported ) ) {
+			update_option( 'manual_translations_strings', $data );
+			wp_send_json_success( array(
+				'message'  => sprintf( _n( 'Successfully imported %d string.', 'Successfully imported %d strings.', count( $imported ), 'manual-translations-for-polylang' ), count( $imported ) ),
+				'imported' => $imported,
+			) );
+		}
+
+		wp_send_json_error( array( 'message' => __( 'No new strings were imported.', 'manual-translations-for-polylang' ) ) );
 	}
 
 	/**
@@ -458,7 +593,14 @@ class Manual_Translations_Admin {
 					<span class="dashicons dashicons-plus"></span>
 					<?php esc_html_e( 'Add New Translation', 'manual-translations-for-polylang' ); ?>
 				</button>
+				<button type="button" class="page-title-action mtfp-trigger-scan" style="background: #0ea5e9; border-color: #0ea5e9; margin-left: 8px;">
+					<span class="dashicons dashicons-search"></span>
+					<?php esc_html_e( 'Scan Theme', 'manual-translations-for-polylang' ); ?>
+				</button>
 			</div>
+
+			<!-- Scan Results Container -->
+			<div id="mtfp-scan-results-container"></div>
 
 			<!-- Main Content Table (Full Width) -->
 			<div class="mtfp-card mtfp-card-table">

@@ -10,7 +10,7 @@ jQuery(document).ready(function ($) {
 	const selectAllCheckbox = $('#mtfp-select-all');
 
 	// --- Reactive UI State ---
-	let allItems = mtfpAdminData.translations || [];
+	let allItems = manualTranslationsForPolylangAdminData.translations || [];
 	let currentPage = 1;
 	let perPage = parseInt($('#mtfp-per-page').val()) || 20;
 	let searchQuery = '';
@@ -48,7 +48,7 @@ jQuery(document).ready(function ($) {
 
 		// 1. Render Table Body
 		if (totalItems === 0) {
-			const colSpan = mtfpAdminData.languages.length + 3;
+			const colSpan = manualTranslationsForPolylangAdminData.languages.length + 3;
 			translationsList.html(`
 				<tr class="mtfp-empty-row">
 					<td colspan="${colSpan}">
@@ -68,7 +68,7 @@ jQuery(document).ready(function ($) {
 		let tbodyHtml = '';
 		pageItems.forEach(function (row) {
 			let langCells = '';
-			mtfpAdminData.languages.forEach(function (lang) {
+			manualTranslationsForPolylangAdminData.languages.forEach(function (lang) {
 				const val = row.translations[lang.slug] || '';
 				langCells += `
 					<td class="mtfp-cell-editable" data-lang="${lang.slug}" data-value="${escapeHtml(val)}">
@@ -207,7 +207,7 @@ jQuery(document).ready(function ($) {
 		newRowActive = true;
 		$('.mtfp-empty-row').hide();
 
-		const languages = mtfpAdminData.languages;
+		const languages = manualTranslationsForPolylangAdminData.languages;
 		let langCells = '';
 		languages.forEach(function (lang) {
 			langCells += `
@@ -263,7 +263,7 @@ jQuery(document).ready(function ($) {
 
 		const sourceVal = newRow.find('.mtfp-new-source-input').val().trim();
 		if (!sourceVal) {
-			alert(mtfpAdminData.i18n.emptySource);
+			alert(manualTranslationsForPolylangAdminData.i18n.emptySource);
 			newRow.find('.mtfp-new-source-input').focus();
 			return;
 		}
@@ -288,12 +288,12 @@ jQuery(document).ready(function ($) {
 		});
 
 		$.ajax({
-			url: mtfpAdminData.ajaxUrl,
+			url: manualTranslationsForPolylangAdminData.ajaxUrl,
 			type: 'POST',
 			dataType: 'json',
 			data: {
 				action: 'mtfp_save_translation',
-				nonce: mtfpAdminData.nonce,
+				nonce: manualTranslationsForPolylangAdminData.nonce,
 				source: sourceVal,
 				translations: translations
 			},
@@ -322,14 +322,14 @@ jQuery(document).ready(function ($) {
 						}, 600);
 					}, 50);
 				} else {
-					alert(response.data.message || mtfpAdminData.i18n.error);
+					alert(response.data.message || manualTranslationsForPolylangAdminData.i18n.error);
 					newRow.find('input').prop('disabled', false);
 					newRow.find('button').prop('disabled', false);
 					newRow.find('.mtfp-new-source-input').focus();
 				}
 			},
 			error: function () {
-				alert(mtfpAdminData.i18n.error);
+				alert(manualTranslationsForPolylangAdminData.i18n.error);
 				newRow.find('input').prop('disabled', false);
 				newRow.find('button').prop('disabled', false);
 			}
@@ -356,19 +356,19 @@ jQuery(document).ready(function ($) {
 		const row = btn.closest('tr');
 		const hash = row.data('hash');
 
-		if (!confirm(mtfpAdminData.i18n.confirmDel)) {
+		if (!confirm(manualTranslationsForPolylangAdminData.i18n.confirmDel)) {
 			return;
 		}
 
 		btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span>');
 
 		$.ajax({
-			url: mtfpAdminData.ajaxUrl,
+			url: manualTranslationsForPolylangAdminData.ajaxUrl,
 			type: 'POST',
 			dataType: 'json',
 			data: {
 				action: 'mtfp_delete_translation',
-				nonce: mtfpAdminData.nonce,
+				nonce: manualTranslationsForPolylangAdminData.nonce,
 				hash: hash
 			},
 			success: function (response) {
@@ -379,12 +379,12 @@ jQuery(document).ready(function ($) {
 						renderTable();
 					});
 				} else {
-					alert(response.data.message || mtfpAdminData.i18n.error);
+					alert(response.data.message || manualTranslationsForPolylangAdminData.i18n.error);
 					btn.prop('disabled', false).html('<span class="dashicons dashicons-trash"></span>');
 				}
 			},
 			error: function () {
-				alert(mtfpAdminData.i18n.error);
+				alert(manualTranslationsForPolylangAdminData.i18n.error);
 				btn.prop('disabled', false).html('<span class="dashicons dashicons-trash"></span>');
 			}
 		});
@@ -399,11 +399,11 @@ jQuery(document).ready(function ($) {
 
 		const selectedCbs = $('.mtfp-row-cb:checked');
 		if (selectedCbs.length === 0) {
-			alert(mtfpAdminData.i18n.noSelection);
+			alert(manualTranslationsForPolylangAdminData.i18n.noSelection);
 			return;
 		}
 
-		if (!confirm(mtfpAdminData.i18n.confirmBulk)) {
+		if (!confirm(manualTranslationsForPolylangAdminData.i18n.confirmBulk)) {
 			return;
 		}
 
@@ -412,15 +412,15 @@ jQuery(document).ready(function ($) {
 			hashes.push($(this).val());
 		});
 
-		applyBulkBtn.prop('disabled', true).text(mtfpAdminData.i18n.saving);
+		applyBulkBtn.prop('disabled', true).text(manualTranslationsForPolylangAdminData.i18n.saving);
 
 		$.ajax({
-			url: mtfpAdminData.ajaxUrl,
+			url: manualTranslationsForPolylangAdminData.ajaxUrl,
 			type: 'POST',
 			dataType: 'json',
 			data: {
 				action: 'mtfp_bulk_delete',
-				nonce: mtfpAdminData.nonce,
+				nonce: manualTranslationsForPolylangAdminData.nonce,
 				hashes: hashes
 			},
 			success: function (response) {
@@ -429,11 +429,11 @@ jQuery(document).ready(function ($) {
 					allItems = allItems.filter(i => !hashes.includes(i.hash));
 					renderTable();
 				} else {
-					alert(response.data.message || mtfpAdminData.i18n.error);
+					alert(response.data.message || manualTranslationsForPolylangAdminData.i18n.error);
 				}
 			},
 			error: function () {
-				alert(mtfpAdminData.i18n.error);
+				alert(manualTranslationsForPolylangAdminData.i18n.error);
 			},
 			complete: function () {
 				applyBulkBtn.prop('disabled', false).text('Apply');
@@ -473,19 +473,19 @@ jQuery(document).ready(function ($) {
 				return;
 			}
 
-			cell.html('<span class="dashicons dashicons-update spin"></span> ' + mtfpAdminData.i18n.saving);
+			cell.html('<span class="dashicons dashicons-update spin"></span> ' + manualTranslationsForPolylangAdminData.i18n.saving);
 
 			// Gather sibling values from inMemoryRow to preserve other columns
 			const rowTranslations = $.extend({}, inMemoryRow.translations);
 			rowTranslations[lang] = newVal;
 
 			$.ajax({
-				url: mtfpAdminData.ajaxUrl,
+				url: manualTranslationsForPolylangAdminData.ajaxUrl,
 				type: 'POST',
 				dataType: 'json',
 				data: {
 					action: 'mtfp_save_translation',
-					nonce: mtfpAdminData.nonce,
+					nonce: manualTranslationsForPolylangAdminData.nonce,
 					source: inMemoryRow.source,
 					translations: rowTranslations
 				},
@@ -502,12 +502,12 @@ jQuery(document).ready(function ($) {
 							cell.css('background-color', '');
 						}, 600);
 					} else {
-						alert(response.data.message || mtfpAdminData.i18n.error);
+						alert(response.data.message || manualTranslationsForPolylangAdminData.i18n.error);
 						restoreCell(originalText);
 					}
 				},
 				error: function () {
-					alert(mtfpAdminData.i18n.error);
+					alert(manualTranslationsForPolylangAdminData.i18n.error);
 					restoreCell(originalText);
 				}
 			});
@@ -531,6 +531,154 @@ jQuery(document).ready(function ($) {
 			}
 		});
 	});
+
+	// --- Theme Scanner Logic ---
+
+	$('.mtfp-trigger-scan').on('click', function () {
+		const btn = $(this);
+		const originalHtml = btn.html();
+		btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> Scanning...');
+
+		$.ajax({
+			url: manualTranslationsForPolylangAdminData.ajaxUrl,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action: 'mtfp_scan_theme',
+				nonce: manualTranslationsForPolylangAdminData.nonce
+			},
+			success: function (response) {
+				if (response.success) {
+					renderScanResults(response.data.strings);
+				} else {
+					alert(response.data.message || manualTranslationsForPolylangAdminData.i18n.error);
+				}
+			},
+			error: function () {
+				alert(manualTranslationsForPolylangAdminData.i18n.error);
+			},
+			complete: function () {
+				btn.prop('disabled', false).html(originalHtml);
+			}
+		});
+	});
+
+	function renderScanResults(strings) {
+		const container = $('#mtfp-scan-results-container');
+		if (strings.length === 0) {
+			container.html(`
+				<div class="notice notice-info notice-alt" style="margin-bottom: 24px;">
+					<p>Scan complete. No new untranslated strings were found in the active theme files.</p>
+				</div>
+			`).show();
+			setTimeout(function () {
+				container.fadeOut(300, function () {
+					container.html('');
+				});
+			}, 4000);
+			return;
+		}
+
+		let listHtml = '';
+		strings.forEach(function (str, idx) {
+			listHtml += `
+				<div class="mtfp-scan-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--mtfp-border); font-size: 13px;">
+					<input type="checkbox" class="mtfp-scan-cb" value="${escapeHtml(str)}" id="mtfp-scan-str-${idx}" />
+					<label for="mtfp-scan-str-${idx}" style="cursor: pointer; font-weight: 500; word-break: break-all;">${escapeHtml(str)}</label>
+				</div>
+			`;
+		});
+
+		container.html(`
+			<div class="mtfp-card mtfp-card-scan-results" style="border-left: 4px solid var(--mtfp-primary); margin-bottom: 24px; padding: 24px;">
+				<h2 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid var(--mtfp-border); color: var(--mtfp-text);">Scan Results – Found ${strings.length} Untranslated Strings</h2>
+				<p class="description" style="margin-bottom: 16px; font-size: 13px; color: var(--mtfp-text-muted);">Select the strings you want to import into your manual translations list.</p>
+				
+				<div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: center;">
+					<button type="button" class="button mtfp-btn-secondary" id="mtfp-scan-select-all">Select All</button>
+					<button type="button" class="button mtfp-btn-secondary" id="mtfp-scan-deselect-all">Deselect All</button>
+				</div>
+
+				<div class="mtfp-scan-list" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--mtfp-border); border-radius: var(--mtfp-radius-md); background: #fafafa; margin-bottom: 20px;">
+					${listHtml}
+				</div>
+
+				<div style="display: flex; gap: 12px;">
+					<button type="button" class="button mtfp-btn-primary" id="mtfp-import-selected-scan">Import Selected</button>
+					<button type="button" class="button mtfp-btn-secondary" id="mtfp-dismiss-scan">Dismiss</button>
+				</div>
+			</div>
+		`).hide().fadeIn(300);
+
+		// Event handlers for scan results card
+		$('#mtfp-scan-select-all').on('click', function () {
+			$('.mtfp-scan-cb').prop('checked', true);
+		});
+
+		$('#mtfp-scan-deselect-all').on('click', function () {
+			$('.mtfp-scan-cb').prop('checked', false);
+		});
+
+		$('#mtfp-dismiss-scan').on('click', function () {
+			container.fadeOut(300, function () {
+				container.html('');
+			});
+		});
+
+		$('#mtfp-import-selected-scan').on('click', function () {
+			const selectedCbs = $('.mtfp-scan-cb:checked');
+			if (selectedCbs.length === 0) {
+				alert('No strings selected.');
+				return;
+			}
+
+			const selectedStrings = [];
+			selectedCbs.each(function () {
+				selectedStrings.push($(this).val());
+			});
+
+			const importBtn = $(this);
+			importBtn.prop('disabled', true).text('Importing...');
+
+			$.ajax({
+				url: manualTranslationsForPolylangAdminData.ajaxUrl,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'mtfp_import_scanned',
+					nonce: manualTranslationsForPolylangAdminData.nonce,
+					strings: selectedStrings
+				},
+				success: function (response) {
+					if (response.success) {
+						// Inject reactively into allItems
+						response.data.imported.forEach(function (item) {
+							allItems.unshift(item);
+						});
+
+						// Update table
+						currentPage = 1;
+						renderTable();
+
+						// Dismiss scan card
+						container.fadeOut(300, function () {
+							container.html('');
+						});
+
+						// Display message
+						alert(response.data.message);
+					} else {
+						alert(response.data.message || manualTranslationsForPolylangAdminData.i18n.error);
+						importBtn.prop('disabled', false).text('Import Selected');
+					}
+				},
+				error: function () {
+					alert(manualTranslationsForPolylangAdminData.i18n.error);
+					importBtn.prop('disabled', false).text('Import Selected');
+				}
+			});
+		});
+	}
 
 	// --- Helper Utilities ---
 

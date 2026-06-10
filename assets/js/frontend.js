@@ -4,11 +4,11 @@
  */
 (function () {
 	// If translations data is missing or empty, do nothing
-	if (typeof manualTranslationsData === 'undefined' || !manualTranslationsData.translations) {
+	if (typeof manualTranslationsForPolylangData === 'undefined' || !manualTranslationsForPolylangData.translations) {
 		return;
 	}
 
-	const translations = manualTranslationsData.translations;
+	const translations = manualTranslationsForPolylangData.translations;
 
 	// Tag names that should be ignored entirely to avoid breaking layouts or code
 	const skipTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'IFRAME', 'CODE', 'PRE']);

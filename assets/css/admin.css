@@ -67,6 +67,11 @@
 	border-color: var(--mtfp-primary-hover);
 }
 
+.mtfp-page-title-row .page-title-action.mtfp-trigger-scan:hover {
+	background: #0284c7 !important;
+	border-color: #0284c7 !important;
+}
+
 .mtfp-page-title-row .page-title-action:active {
 	transform: scale(0.98);
 }
