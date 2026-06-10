@@ -816,6 +816,12 @@ jQuery(document).ready(function ($) {
 
 	// Perform AI Translation orchestration
 	function performAiTranslation(source, lang) {
+		// If target language is English, source text is already in English.
+		// Simply return the source string as the translation.
+		if (lang === 'en' || lang.split('-')[0] === 'en' || lang.split('_')[0] === 'en') {
+			return Promise.resolve(source);
+		}
+
 		const provider = manualTranslationsForPolylangAdminData.aiSettings ? manualTranslationsForPolylangAdminData.aiSettings.provider : 'none';
 		
 		if (provider === 'browser') {
