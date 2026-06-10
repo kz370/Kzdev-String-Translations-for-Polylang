@@ -34,6 +34,8 @@ class Manual_Translations_Admin {
 		add_action( 'wp_ajax_mtfp_bulk_delete', array( $this, 'ajax_bulk_delete' ) );
 		add_action( 'wp_ajax_mtfp_scan_theme', array( $this, 'ajax_scan_theme' ) );
 		add_action( 'wp_ajax_mtfp_import_scanned', array( $this, 'ajax_import_scanned' ) );
+		add_action( 'wp_ajax_mtfp_save_ai_settings', array( $this, 'ajax_save_ai_settings' ) );
+		add_action( 'wp_ajax_mtfp_ai_translate', array( $this, 'ajax_ai_translate' ) );
 	}
 
 	/**
@@ -131,6 +133,9 @@ class Manual_Translations_Admin {
 			);
 		}
 
+		// Retrieve current AI settings
+		$ai_settings = get_option( 'manual_translations_ai_settings', array( 'provider' => 'none' ) );
+
 		// Pass data and security nonces to JavaScript
 		wp_localize_script(
 			'mtfp-admin-scripts',
@@ -140,6 +145,9 @@ class Manual_Translations_Admin {
 				'nonce'        => wp_create_nonce( 'mtfp_admin_nonce' ),
 				'languages'    => $this->get_active_languages(),
 				'translations' => $translations_list,
+				'aiSettings'   => array(
+					'provider' => isset( $ai_settings['provider'] ) ? $ai_settings['provider'] : 'none',
+				),
 				'i18n'         => array(
 					'saving'       => __( 'Saving...', 'manual-translations-for-polylang' ),
 					'saved'        => __( 'Saved', 'manual-translations-for-polylang' ),
@@ -456,6 +464,131 @@ class Manual_Translations_Admin {
 	}
 
 	/**
+	 * AJAX endpoint: Save AI Settings.
+	 */
+	public function ajax_save_ai_settings() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+		}
+		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
+
+		$provider     = isset( $_POST['provider'] ) ? sanitize_text_field( wp_unslash( $_POST['provider'] ) ) : 'none';
+		$openai_url   = isset( $_POST['openai_url'] ) ? esc_url_raw( wp_unslash( $_POST['openai_url'] ) ) : '';
+		$openai_key   = isset( $_POST['openai_key'] ) ? sanitize_text_field( wp_unslash( $_POST['openai_key'] ) ) : '';
+		$openai_model = isset( $_POST['openai_model'] ) ? sanitize_text_field( wp_unslash( $_POST['openai_model'] ) ) : '';
+
+		$settings = array(
+			'provider'     => $provider,
+			'openai_url'   => $openai_url,
+			'openai_key'   => $openai_key,
+			'openai_model' => $openai_model,
+		);
+
+		update_option( 'manual_translations_ai_settings', $settings );
+
+		wp_send_json_success( array(
+			'message'  => __( 'AI settings saved successfully.', 'manual-translations-for-polylang' ),
+			'provider' => $provider,
+		) );
+	}
+
+	/**
+	 * AJAX endpoint: Translate via OpenAI-compatible API (server-side to protect keys).
+	 */
+	public function ajax_ai_translate() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+		}
+		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
+
+		$source      = isset( $_POST['source'] ) ? trim( wp_unslash( $_POST['source'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$target_lang = isset( $_POST['target_lang'] ) ? sanitize_text_field( wp_unslash( $_POST['target_lang'] ) ) : '';
+
+		if ( '' === $source || '' === $target_lang ) {
+			wp_send_json_error( array( 'message' => __( 'Missing source string or target language.', 'manual-translations-for-polylang' ) ) );
+		}
+
+		$ai_settings = get_option( 'manual_translations_ai_settings', array() );
+		$provider    = $ai_settings['provider'] ?? 'none';
+
+		if ( 'openai' !== $provider ) {
+			wp_send_json_error( array( 'message' => __( 'OpenAI provider is not active.', 'manual-translations-for-polylang' ) ) );
+		}
+
+		$api_url = ! empty( $ai_settings['openai_url'] ) ? esc_url_raw( $ai_settings['openai_url'] ) : 'https://api.openai.com/v1/chat/completions';
+		$api_key = $ai_settings['openai_key'] ?? '';
+		$model   = ! empty( $ai_settings['openai_model'] ) ? sanitize_text_field( $ai_settings['openai_model'] ) : 'gpt-4o-mini';
+
+		// Resolve target language name
+		$languages = $this->get_active_languages();
+		$target_name = $target_lang;
+		foreach ( $languages as $lang ) {
+			if ( $lang['slug'] === $target_lang ) {
+				$target_name = $lang['name'];
+				break;
+			}
+		}
+
+		// Set up request headers
+		$headers = array(
+			'Content-Type' => 'application/json',
+		);
+		if ( ! empty( $api_key ) ) {
+			$headers['Authorization'] = 'Bearer ' . $api_key;
+		}
+
+		// Set up request body
+		$body = array(
+			'model'       => $model,
+			'messages'    => array(
+				array(
+					'role'    => 'system',
+					'content' => 'You are a professional, accurate translator. Translate the user input into the target language. Preserve any placeholders (like %s, %d, {var}), HTML tags, and formatting exactly. Respond with the translated string ONLY. Do not wrap the output in quotes, and do not add any markdown formatting, explanations, or conversational text.'
+				),
+				array(
+					'role'    => 'user',
+					'content' => sprintf( "Target language: %s (code: %s)\nText to translate: %s", $target_name, $target_lang, $source )
+				)
+			),
+			'temperature' => 0.1,
+		);
+
+		// Dispatch the request
+		$response = wp_remote_post( $api_url, array(
+			'headers' => $headers,
+			'body'    => wp_json_encode( $body ),
+			'timeout' => 30,
+		) );
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( array( 'message' => $response->get_error_message() ) );
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		$response_body = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== $response_code ) {
+			$error_data = json_decode( $response_body, true );
+			$error_message = $error_data['error']['message'] ?? sprintf( __( 'API returned HTTP %d', 'manual-translations-for-polylang' ), $response_code );
+			wp_send_json_error( array( 'message' => $error_message ) );
+		}
+
+		$data = json_decode( $response_body, true );
+		$translation = $data['choices'][0]['message']['content'] ?? '';
+		$translation = trim( $translation );
+
+		// Strip wrapping quotes if LLM incorrectly included them
+		if ( ( strpos( $translation, '"' ) === 0 && strrpos( $translation, '"' ) === strlen( $translation ) - 1 ) || 
+			( strpos( $translation, "'" ) === 0 && strrpos( $translation, "'" ) === strlen( $translation ) - 1 ) ) {
+			$translation = substr( $translation, 1, -1 );
+		}
+
+		wp_send_json_success( array(
+			'translation' => $translation,
+		) );
+	}
+
+	/**
 	 * Handle CSV Export request.
 	 */
 	public function handle_csv_export() {
@@ -648,6 +781,13 @@ class Manual_Translations_Admin {
 					<span class="dashicons dashicons-plus"></span>
 					<?php esc_html_e( 'Add New Translation', 'manual-translations-for-polylang' ); ?>
 				</button>
+				<?php
+				$ai_settings = get_option( 'manual_translations_ai_settings', array( 'provider' => 'none' ) );
+				?>
+				<button type="button" class="page-title-action mtfp-trigger-auto-translate" style="margin-right: 8px; background: #8b5cf6; border-color: #8b5cf6; <?php echo 'none' === $ai_settings['provider'] ? 'display: none;' : ''; ?>">
+					<span class="dashicons dashicons-admin-customizer"></span>
+					<?php esc_html_e( 'Auto Translate', 'manual-translations-for-polylang' ); ?>
+				</button>
 
 				<div class="mtfp-scan-group">
 					<select id="mtfp-scan-target" class="mtfp-select">
@@ -802,6 +942,51 @@ class Manual_Translations_Admin {
 						<button type="submit" class="button mtfp-btn-primary full-width">
 							<span class="dashicons dashicons-download"></span>
 							<?php esc_html_e( 'Export All to CSV', 'manual-translations-for-polylang' ); ?>
+						</button>
+					</form>
+				</div>
+
+				<!-- Card: AI Translation Settings -->
+				<div class="mtfp-card mtfp-card-ai-settings">
+					<h2><?php esc_html_e( 'AI Translation Settings', 'manual-translations-for-polylang' ); ?></h2>
+					<form id="mtfp-ai-settings-form" method="post" action="">
+						<?php
+						$ai_settings = get_option( 'manual_translations_ai_settings', array(
+							'provider'     => 'none',
+							'openai_url'   => 'https://api.openai.com/v1/chat/completions',
+							'openai_key'   => '',
+							'openai_model' => 'gpt-4o-mini',
+						) );
+						?>
+						<div class="mtfp-form-group">
+							<label for="mtfp-ai-provider"><?php esc_html_e( 'Translation Provider', 'manual-translations-for-polylang' ); ?></label>
+							<select id="mtfp-ai-provider" name="provider" class="mtfp-select full-width">
+								<option value="none" <?php selected( $ai_settings['provider'], 'none' ); ?>><?php esc_html_e( 'None (Disabled)', 'manual-translations-for-polylang' ); ?></option>
+								<option value="browser" <?php selected( $ai_settings['provider'], 'browser' ); ?>><?php esc_html_e( 'Browser Built-in AI (Chrome / Edge)', 'manual-translations-for-polylang' ); ?></option>
+								<option value="openai" <?php selected( $ai_settings['provider'], 'openai' ); ?>><?php esc_html_e( 'OpenAI-Compatible API', 'manual-translations-for-polylang' ); ?></option>
+							</select>
+						</div>
+
+						<div class="mtfp-ai-openai-fields" style="<?php echo 'openai' === $ai_settings['provider'] ? '' : 'display: none;'; ?>">
+							<div class="mtfp-form-group">
+								<label for="mtfp-openai-url"><?php esc_html_e( 'API URL Base', 'manual-translations-for-polylang' ); ?></label>
+								<input type="url" id="mtfp-openai-url" name="openai_url" class="mtfp-input full-width" value="<?php echo esc_url( $ai_settings['openai_url'] ); ?>" placeholder="https://api.openai.com/v1/chat/completions" />
+							</div>
+
+							<div class="mtfp-form-group">
+								<label for="mtfp-openai-key"><?php esc_html_e( 'API Key (Optional)', 'manual-translations-for-polylang' ); ?></label>
+								<input type="password" id="mtfp-openai-key" name="openai_key" class="mtfp-input full-width" value="<?php echo esc_attr( $ai_settings['openai_key'] ); ?>" placeholder="<?php esc_attr_e( 'sk-... (leave empty if local/none required)', 'manual-translations-for-polylang' ); ?>" autocomplete="new-password" />
+							</div>
+
+							<div class="mtfp-form-group">
+								<label for="mtfp-openai-model"><?php esc_html_e( 'Model Name', 'manual-translations-for-polylang' ); ?></label>
+								<input type="text" id="mtfp-openai-model" name="openai_model" class="mtfp-input full-width" value="<?php echo esc_attr( $ai_settings['openai_model'] ); ?>" placeholder="gpt-4o-mini" />
+							</div>
+						</div>
+
+						<button type="submit" class="button mtfp-btn-primary full-width">
+							<span class="dashicons dashicons-saved"></span>
+							<?php esc_html_e( 'Save AI Settings', 'manual-translations-for-polylang' ); ?>
 						</button>
 					</form>
 				</div>

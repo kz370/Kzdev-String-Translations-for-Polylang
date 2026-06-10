@@ -143,13 +143,19 @@
 	height: 14px;
 }
 
-/* Bottom Tools Grid (Import/Export side-by-side) */
+/* Bottom Tools Grid (Import/Export/AI Settings side-by-side) */
 .mtfp-bottom-grid {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: 1fr 1fr 1fr;
 	gap: 24px;
 	margin-top: 24px;
 	align-items: start;
+}
+
+@media (max-width: 1024px) {
+	.mtfp-bottom-grid {
+		grid-template-columns: 1fr 1fr;
+	}
 }
 
 @media (max-width: 768px) {
@@ -558,3 +564,58 @@
 	background: var(--mtfp-danger-light);
 }
 
+/* AI Magic Wand Cell Button */
+.mtfp-cell-ai-translate {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: #8b5cf6;
+	color: #ffffff;
+	border: none;
+	border-radius: 4px;
+	width: 22px;
+	height: 22px;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 1px 3px rgba(139, 92, 246, 0.3);
+	transition: background-color 0.15s ease, transform 0.1s ease;
+	z-index: 10;
+}
+
+.mtfp-cell-ai-translate:hover {
+	background: #7c3aed;
+	transform: translateY(-50%) scale(1.05);
+}
+
+.mtfp-cell-ai-translate:active {
+	transform: translateY(-50%) scale(0.95);
+}
+
+.mtfp-cell-ai-translate span {
+	font-size: 12px;
+	width: 12px;
+	height: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Shift edit indicator left when AI wand is visible */
+.mtfp-cell-editable:hover .mtfp-edit-indicator {
+	opacity: 0.5;
+	right: 8px;
+}
+
+.mtfp-cell-ai-translate ~ .mtfp-edit-indicator {
+	right: 36px !important;
+}
+
+.mtfp-ai-openai-fields {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px dashed var(--mtfp-border);
+}
