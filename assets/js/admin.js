@@ -760,12 +760,30 @@ jQuery(document).ready(function ($) {
 		});
 	});
 
+	function isBrowserTranslationSupported() {
+		return (typeof window.Translator !== 'undefined') ||
+		       (typeof window.translation !== 'undefined' && typeof window.translation.createTranslator === 'function') ||
+			   (typeof window.ai !== 'undefined' && typeof window.ai.translator !== 'undefined');
+	}
+
 	// Browser Translation API Helper
 	async function translateWithBrowser(sourceText, targetLangCode) {
 		const sourceLang = 'en';
 		const targetLang = targetLangCode;
 
-		// 1. Try window.translation API
+		// 1. Try window.Translator (2026 Chrome Spec standard)
+		if (typeof window.Translator !== 'undefined' && typeof window.Translator.create === 'function') {
+			if (typeof window.Translator.canTranslate === 'function') {
+				const canTranslate = await window.Translator.canTranslate({ sourceLanguage: sourceLang, targetLanguage: targetLang });
+				if (canTranslate === 'no') {
+					throw new Error(`Browser Translator API cannot translate from '${sourceLang}' to '${targetLang}'.`);
+				}
+			}
+			const translator = await window.Translator.create({ sourceLanguage: sourceLang, targetLanguage: targetLang });
+			return await translator.translate(sourceText);
+		}
+
+		// 2. Try window.translation API (Chrome experimental translation API)
 		if (typeof window.translation !== 'undefined' && typeof window.translation.createTranslator === 'function') {
 			const canTranslate = await window.translation.canTranslate({ sourceLanguage: sourceLang, targetLanguage: targetLang });
 			if (canTranslate === 'no') {
@@ -775,18 +793,25 @@ jQuery(document).ready(function ($) {
 			return await translator.translate(sourceText);
 		}
 
-		// 2. Try window.ai.translator API
+		// 3. Try window.ai.translator API (Older Chrome experimental namespace)
 		if (typeof window.ai !== 'undefined' && typeof window.ai.translator !== 'undefined') {
-			const capabilities = await window.ai.translator.capabilities();
-			const canTranslate = capabilities.languagePairAvailable(sourceLang, targetLang);
-			if (canTranslate === 'no') {
-				throw new Error(`Browser AI API cannot translate from '${sourceLang}' to '${targetLang}'.`);
+			if (typeof window.ai.translator.canTranslate === 'function') {
+				const canTranslate = await window.ai.translator.canTranslate({ sourceLanguage: sourceLang, targetLanguage: targetLang });
+				if (canTranslate === 'no') {
+					throw new Error(`Browser AI API cannot translate from '${sourceLang}' to '${targetLang}'.`);
+				}
+			} else if (typeof window.ai.translator.capabilities === 'function') {
+				const capabilities = await window.ai.translator.capabilities();
+				const canTranslate = capabilities.languagePairAvailable(sourceLang, targetLang);
+				if (canTranslate === 'no') {
+					throw new Error(`Browser AI API cannot translate from '${sourceLang}' to '${targetLang}'.`);
+				}
 			}
 			const translator = await window.ai.translator.create({ sourceLanguage: sourceLang, targetLanguage: targetLang });
 			return await translator.translate(sourceText);
 		}
 
-		throw new Error("Built-in Translation API is not supported in this browser or is disabled. Make sure you enable 'Translation API' and 'Write-assistance Helper' in chrome://flags or edge://flags.");
+		throw new Error("Built-in Translation API is not supported in this browser or is disabled. Make sure you enable 'Translation API' and relaunch your browser.");
 	}
 
 	// Perform AI Translation orchestration
@@ -827,6 +852,12 @@ jQuery(document).ready(function ($) {
 	// Individual AI translation click trigger
 	translationsList.on('click', '.mtfp-cell-ai-translate', function (e) {
 		e.stopPropagation();
+
+		const provider = manualTranslationsForPolylangAdminData.aiSettings ? manualTranslationsForPolylangAdminData.aiSettings.provider : 'none';
+		if (provider === 'browser' && !isBrowserTranslationSupported()) {
+			alert("The browser built-in AI Translation API is not supported or is disabled in your browser.\n\nTo use it, please enable the 'Translation API' flag in chrome://flags or edge://flags, or switch to the OpenAI-Compatible API provider in the settings card below.");
+			return;
+		}
 
 		const btn = $(this);
 		const cell = btn.closest('td');
@@ -889,6 +920,10 @@ jQuery(document).ready(function ($) {
 		const provider = manualTranslationsForPolylangAdminData.aiSettings ? manualTranslationsForPolylangAdminData.aiSettings.provider : 'none';
 		if (provider === 'none') {
 			alert("Please configure an AI provider in the settings card below first.");
+			return;
+		}
+		if (provider === 'browser' && !isBrowserTranslationSupported()) {
+			alert("The browser built-in AI Translation API is not supported or is disabled in your browser.\n\nTo use it, please enable the 'Translation API' flag in chrome://flags or edge://flags, or switch to the OpenAI-Compatible API provider in the settings card below.");
 			return;
 		}
 

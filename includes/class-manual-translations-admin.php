@@ -842,6 +842,8 @@ class Manual_Translations_Admin {
 								<option value="20" selected>20</option>
 								<option value="50">50</option>
 								<option value="100">100</option>
+								<option value="200">200</option>
+								<option value="500">500</option>
 							</select>
 							<span><?php esc_html_e( 'per page', 'manual-translations-for-polylang' ); ?></span>
 						</div>
