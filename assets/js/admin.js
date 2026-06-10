@@ -19,6 +19,9 @@ jQuery(document).ready(function ($) {
 	// --- Render Engine ---
 
 	function renderTable() {
+		if (translationsList.length === 0) {
+			return;
+		}
 		// Filter items based on search query
 		const query = searchQuery.toLowerCase().trim();
 		const filteredItems = allItems.filter(function (item) {
@@ -542,14 +545,59 @@ jQuery(document).ready(function ($) {
 		});
 	});
 
-	// --- Theme Scanner Logic ---
+	// --- Scan Modal & Theme Scanner Logic ---
 
-	$('.mtfp-trigger-scan').on('click', function () {
-		const btn = $(this);
-		const originalHtml = btn.html();
-		const targetVal = $('#mtfp-scan-target').val();
+	function showScanModal() {
+		$('#mtfp-scan-modal').addClass('mtfp-modal-active');
+	}
 
-		btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> Scanning...');
+	function hideScanModal() {
+		$('#mtfp-scan-modal').removeClass('mtfp-modal-active');
+	}
+
+	// Show scan modal
+	$('.mtfp-trigger-scan-modal').on('click', function () {
+		showScanModal();
+	});
+
+	// Hide scan modal
+	$('#mtfp-scan-modal-close, #mtfp-scan-modal').on('click', function (e) {
+		if (e.target === this) {
+			hideScanModal();
+		}
+	});
+
+	// Toggle specific plugin select input inside modal
+	$('#mtfp-modal-scan-type').on('change', function () {
+		if ($(this).val() === 'specific-plugin') {
+			$('#mtfp-modal-specific-plugin-group').slideDown(200);
+		} else {
+			$('#mtfp-modal-specific-plugin-group').slideUp(200);
+		}
+	});
+
+	// Start Scan from modal
+	$('#mtfp-modal-start-scan-btn').on('click', function () {
+		const modalScanType = $('#mtfp-modal-scan-type').val();
+		let targetVal = modalScanType;
+
+		if (modalScanType === 'specific-plugin') {
+			const pluginFolder = $('#mtfp-modal-specific-plugin').val();
+			if (!pluginFolder) {
+				alert("Please select a plugin to scan.");
+				return;
+			}
+			targetVal = 'plugin:' + pluginFolder;
+		}
+
+		// Close modal
+		hideScanModal();
+
+		// Trigger AJAX scan
+		const scanTriggerBtn = $('.mtfp-trigger-scan-modal');
+		const originalHtml = scanTriggerBtn.html();
+
+		scanTriggerBtn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> Scanning...');
 
 		$.ajax({
 			url: manualTranslationsForPolylangAdminData.ajaxUrl,
@@ -571,7 +619,7 @@ jQuery(document).ready(function ($) {
 				alert(manualTranslationsForPolylangAdminData.i18n.error);
 			},
 			complete: function () {
-				btn.prop('disabled', false).html(originalHtml);
+				scanTriggerBtn.prop('disabled', false).html(originalHtml);
 			}
 		});
 	});
@@ -581,7 +629,7 @@ jQuery(document).ready(function ($) {
 		if (strings.length === 0) {
 			container.html(`
 				<div class="notice notice-info notice-alt" style="margin-bottom: 24px;">
-					<p>Scan complete. No new untranslated strings were found in the active theme files.</p>
+					<p>Scan complete. No new untranslated strings were found in the selected scan target.</p>
 				</div>
 			`).show();
 			setTimeout(function () {
@@ -1131,6 +1179,154 @@ jQuery(document).ready(function ($) {
 		}
 	`;
 	$('<style>').text(spinStyle).appendTo('head');
+
+	// --- Post / Page Translation Sidebar Metabox Handler ---
+	if (manualTranslationsForPolylangAdminData.postDetails) {
+		const postWrapper = $('.mtfp-metabox-wrapper');
+		
+		function showPostLoading() {
+			postWrapper.closest('#mtfp-ai-translation-helper').addClass('mtfp-panel-loading');
+		}
+		
+		function hidePostLoading() {
+			postWrapper.closest('#mtfp-ai-translation-helper').removeClass('mtfp-panel-loading');
+		}
+
+		postWrapper.on('click', '.mtfp-post-translate-btn, .mtfp-post-retranslate-btn', function (e) {
+			e.preventDefault();
+			const btn = $(this);
+			const targetLang = btn.data('lang');
+			const sourceDetails = manualTranslationsForPolylangAdminData.postDetails;
+			const provider = manualTranslationsForPolylangAdminData.aiSettings ? manualTranslationsForPolylangAdminData.aiSettings.provider : 'none';
+
+			if (provider === 'browser' && !isBrowserTranslationSupported()) {
+				alert("The browser built-in AI Translation API is not supported or is disabled in your browser.\n\nTo use it, please enable the 'Translation API' flag in chrome://flags or edge://flags.");
+				return;
+			}
+
+			showPostLoading();
+
+			if (provider === 'browser') {
+				const titlePromise = sourceDetails.title ? performAiTranslation(sourceDetails.title, targetLang) : Promise.resolve('');
+				const contentPromise = sourceDetails.content ? performAiTranslation(sourceDetails.content, targetLang) : Promise.resolve('');
+				const excerptPromise = sourceDetails.excerpt ? performAiTranslation(sourceDetails.excerpt, targetLang) : Promise.resolve('');
+
+				Promise.all([titlePromise, contentPromise, excerptPromise])
+					.then(function (results) {
+						savePostTranslation(sourceDetails.id, targetLang, results[0], results[1], results[2]);
+					})
+					.catch(function (err) {
+						alert("Browser AI Translation failed: " + err.message);
+						hidePostLoading();
+					});
+			} else {
+				// openai or none: delegate entirely to PHP
+				savePostTranslation(sourceDetails.id, targetLang, '', '', '');
+			}
+		});
+
+		function savePostTranslation(postId, targetLang, title, content, excerpt) {
+			$.ajax({
+				url: manualTranslationsForPolylangAdminData.ajaxUrl,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'mtfp_create_post_translation',
+					nonce: manualTranslationsForPolylangAdminData.nonce,
+					post_id: postId,
+					target_lang: targetLang,
+					translated_title: title,
+					translated_content: content,
+					translated_excerpt: excerpt
+				},
+				success: function (response) {
+					if (response.success) {
+						window.location.href = response.data.edit_url;
+					} else {
+						alert(response.data.message || "An error occurred.");
+						hidePostLoading();
+					}
+				},
+				error: function () {
+					alert("A server or connection error occurred.");
+					hidePostLoading();
+				}
+			});
+		}
+	}
+
+	// --- Category / Taxonomy Term Translation Panel Handler ---
+	if (manualTranslationsForPolylangAdminData.termDetails) {
+		const termContainer = $('.mtfp-term-translation-container');
+		
+		function showTermLoading() {
+			termContainer.addClass('mtfp-panel-loading');
+		}
+		
+		function hideTermLoading() {
+			termContainer.removeClass('mtfp-panel-loading');
+		}
+
+		termContainer.on('click', '.mtfp-term-translate-btn, .mtfp-term-retranslate-btn', function (e) {
+			e.preventDefault();
+			const btn = $(this);
+			const targetLang = btn.data('lang');
+			const sourceDetails = manualTranslationsForPolylangAdminData.termDetails;
+			const provider = manualTranslationsForPolylangAdminData.aiSettings ? manualTranslationsForPolylangAdminData.aiSettings.provider : 'none';
+
+			if (provider === 'browser' && !isBrowserTranslationSupported()) {
+				alert("The browser built-in AI Translation API is not supported or is disabled in your browser.\n\nTo use it, please enable the 'Translation API' flag in chrome://flags or edge://flags.");
+				return;
+			}
+
+			showTermLoading();
+
+			if (provider === 'browser') {
+				const namePromise = sourceDetails.name ? performAiTranslation(sourceDetails.name, targetLang) : Promise.resolve('');
+				const descPromise = sourceDetails.description ? performAiTranslation(sourceDetails.description, targetLang) : Promise.resolve('');
+
+				Promise.all([namePromise, descPromise])
+					.then(function (results) {
+						saveTermTranslation(sourceDetails.id, targetLang, results[0], results[1]);
+					})
+					.catch(function (err) {
+						alert("Browser AI Translation failed: " + err.message);
+						hideTermLoading();
+					});
+			} else {
+				// openai or none: delegate entirely to PHP
+				saveTermTranslation(sourceDetails.id, targetLang, '', '');
+			}
+		});
+
+		function saveTermTranslation(termId, targetLang, name, description) {
+			$.ajax({
+				url: manualTranslationsForPolylangAdminData.ajaxUrl,
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					action: 'mtfp_create_term_translation',
+					nonce: manualTranslationsForPolylangAdminData.nonce,
+					term_id: termId,
+					target_lang: targetLang,
+					translated_name: name,
+					translated_description: description
+				},
+				success: function (response) {
+					if (response.success) {
+						window.location.href = response.data.edit_url;
+					} else {
+						alert(response.data.message || "An error occurred.");
+						hideTermLoading();
+					}
+				},
+				error: function () {
+					alert("A server or connection error occurred.");
+					hideTermLoading();
+				}
+			});
+		}
+	}
 
 	// --- Boot Engine ---
 	renderTable();
