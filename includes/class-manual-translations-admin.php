@@ -810,7 +810,7 @@ class Manual_Translations_Admin {
 						}
 						?>
 					</select>
-					<button type="button" class="page-title-action mtfp-trigger-scan">
+					<button type="button" class="mtfp-trigger-scan">
 						<span class="dashicons dashicons-search"></span>
 						<?php esc_html_e( 'Scan', 'manual-translations-for-polylang' ); ?>
 					</button>

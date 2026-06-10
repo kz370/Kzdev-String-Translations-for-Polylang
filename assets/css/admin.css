@@ -80,7 +80,7 @@
 /* Unified SaaS-style Scan Group */
 .mtfp-scan-group {
 	display: inline-flex;
-	align-items: center;
+	align-items: stretch;
 	background: #ffffff;
 	border: 1px solid var(--mtfp-border);
 	border-radius: var(--mtfp-radius-md);
@@ -102,8 +102,7 @@
 	color: var(--mtfp-text-muted);
 	cursor: pointer;
 	outline: none !important;
-	height: 32px !important;
-	line-height: 32px !important;
+	height: 100% !important;
 	font-size: 13px;
 	vertical-align: middle !important;
 	-webkit-appearance: none !important;
@@ -117,12 +116,11 @@
 	border-left: 1px solid var(--mtfp-border) !important;
 	color: #ffffff !important;
 	box-shadow: none !important;
-	height: 32px !important;
-	padding: 20px 16px !important;
+	height: 100% !important;
+	padding: 0 16px !important;
 	border-radius: 0 !important;
 	font-weight: 600 !important;
 	font-size: 13px !important;
-	line-height: 1 !important;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -141,6 +139,10 @@
 	font-size: 14px;
 	width: 14px;
 	height: 14px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	vertical-align: middle !important;
 }
 
 /* Bottom Tools Grid (Import/Export/AI Settings side-by-side) */
