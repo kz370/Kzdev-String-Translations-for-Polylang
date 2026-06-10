@@ -44,6 +44,9 @@ class Manual_Translations_Admin {
 		add_action( 'wp_ajax_mtfp_ai_translate', array( $this, 'ajax_ai_translate' ) );
 		add_action( 'wp_ajax_mtfp_create_post_translation', array( $this, 'ajax_create_post_translation' ) );
 		add_action( 'wp_ajax_mtfp_create_term_translation', array( $this, 'ajax_create_term_translation' ) );
+
+		// Inject focus reset inline stylesheet in the admin head to bypass style caching issues
+		add_action( 'admin_head', array( $this, 'inject_admin_focus_reset' ) );
 	}
 
 	/**
@@ -122,14 +125,14 @@ class Manual_Translations_Admin {
 			'mtfp-admin-styles',
 			MTFP_PLUGIN_URL . 'assets/css/admin.css',
 			array(),
-			MTFP_VERSION
+			filemtime( MTFP_PLUGIN_DIR . 'assets/css/admin.css' )
 		);
 
 		wp_enqueue_script(
 			'mtfp-admin-scripts',
 			MTFP_PLUGIN_URL . 'assets/js/admin.js',
 			array( 'jquery' ),
-			MTFP_VERSION,
+			filemtime( MTFP_PLUGIN_DIR . 'assets/js/admin.js' ),
 			true
 		);
 
@@ -1311,19 +1314,19 @@ class Manual_Translations_Admin {
 			<!-- Header Title Row -->
 			<div class="mtfp-page-title-row" style="flex-wrap: wrap;">
 				<h1 class="wp-heading-inline"><?php esc_html_e( 'Manual Translations', 'manual-translations-for-polylang' ); ?></h1>
-				<button type="button" class="page-title-action mtfp-trigger-add-row" style="margin-right: 8px;">
+				<button type="button" class="page-title-action mtfp-trigger-add-row">
 					<span class="dashicons dashicons-plus"></span>
 					<?php esc_html_e( 'Add New Translation', 'manual-translations-for-polylang' ); ?>
 				</button>
 				<?php
 				$ai_settings = get_option( 'manual_translations_ai_settings', array( 'provider' => 'none' ) );
 				?>
-				<button type="button" class="page-title-action mtfp-trigger-auto-translate" style="margin-right: 8px; background: #8b5cf6; border-color: #8b5cf6; <?php echo 'none' === $ai_settings['provider'] ? 'display: none;' : ''; ?>">
+				<button type="button" class="page-title-action mtfp-trigger-auto-translate" style="<?php echo 'none' === $ai_settings['provider'] ? 'display: none;' : ''; ?>">
 					<span class="dashicons dashicons-admin-customizer"></span>
 					<?php esc_html_e( 'Auto Translate', 'manual-translations-for-polylang' ); ?>
 				</button>
 
-				<button type="button" class="page-title-action mtfp-trigger-scan-modal" style="background: #0ea5e9; border-color: #0ea5e9; margin-right: 8px;">
+				<button type="button" class="page-title-action mtfp-trigger-scan-modal">
 					<span class="dashicons dashicons-search"></span>
 					<?php esc_html_e( 'Scan & Import', 'manual-translations-for-polylang' ); ?>
 				</button>
@@ -1556,6 +1559,179 @@ class Manual_Translations_Admin {
 				</div>
 			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Inject inline style block in admin head to completely disable focus outlines on all buttons.
+	 */
+	public function inject_admin_focus_reset() {
+		?>
+		<style id="mtfp-admin-focus-reset">
+		body.wp-core-ui .button:focus,
+		body.wp-core-ui .button-primary:focus,
+		body.wp-core-ui .page-title-action:focus,
+		body.wp-core-ui button:focus,
+		body.wp-core-ui input[type="button"]:focus,
+		body.wp-core-ui input[type="submit"]:focus,
+		body.wp-core-ui .mtfp-post-translate-btn:focus,
+		body.wp-core-ui .mtfp-term-translate-btn:focus,
+		body.wp-core-ui .mtfp-post-retranslate-btn:focus,
+		body.wp-core-ui .mtfp-term-retranslate-btn:focus {
+			outline: none !important;
+			outline-offset: 0 !important;
+			box-shadow: none !important;
+		}
+		body.wp-core-ui .button:active,
+		body.wp-core-ui .button-primary:active,
+		body.wp-core-ui .page-title-action:active,
+		body.wp-core-ui button:active,
+		body.wp-core-ui input[type="button"]:active,
+		body.wp-core-ui input[type="submit"]:active,
+		body.wp-core-ui .mtfp-post-translate-btn:active,
+		body.wp-core-ui .mtfp-term-translate-btn:active,
+		body.wp-core-ui .mtfp-post-retranslate-btn:active,
+		body.wp-core-ui .mtfp-term-retranslate-btn:active {
+			outline: none !important;
+			box-shadow: none !important;
+		}
+
+		/* Enforce display layout under all conditions to prevent WP style overrides from breaking flex */
+		.mtfp-page-title-row .page-title-action,
+		body.wp-admin .mtfp-page-title-row .page-title-action,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action {
+			display: inline-flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+			gap: 6px !important;
+			padding: 6px 14px !important;
+			border-radius: 8px !important;
+			font-weight: 600 !important;
+			font-size: 13px !important;
+			cursor: pointer !important;
+			text-decoration: none !important;
+			height: auto !important;
+			line-height: 1.5 !important;
+		}
+
+		/* Specific Title Row Buttons Overrides to maintain colors on hover/focus/active */
+		/* 1. Add New Translation */
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row {
+			background: #6366f1 !important;
+			border-color: #6366f1 !important;
+			color: #ffffff !important;
+			margin-right: 8px !important;
+			box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15) !important;
+			outline: none !important;
+		}
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible {
+			background: #6366f1 !important;
+			border-color: #6366f1 !important;
+			color: #ffffff !important;
+			outline: none !important;
+			box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15) !important;
+		}
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active {
+			background: #4f46e5 !important;
+			border-color: #4f46e5 !important;
+			color: #ffffff !important;
+			outline: none !important;
+			box-shadow: none !important;
+		}
+
+		/* 2. Auto Translate */
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate {
+			background: #8b5cf6 !important;
+			border-color: #8b5cf6 !important;
+			color: #ffffff !important;
+			margin-right: 8px !important;
+			box-shadow: 0 2px 4px rgba(139, 92, 246, 0.15) !important;
+			outline: none !important;
+		}
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible {
+			background: #8b5cf6 !important;
+			border-color: #8b5cf6 !important;
+			color: #ffffff !important;
+			outline: none !important;
+			box-shadow: 0 2px 4px rgba(139, 92, 246, 0.15) !important;
+		}
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active {
+			background: #7c3aed !important;
+			border-color: #7c3aed !important;
+			color: #ffffff !important;
+			outline: none !important;
+			box-shadow: none !important;
+		}
+
+		/* 3. Scan & Import */
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal {
+			background: #0ea5e9 !important;
+			border-color: #0ea5e9 !important;
+			color: #ffffff !important;
+			margin-right: 8px !important;
+			box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15) !important;
+			outline: none !important;
+		}
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible {
+			background: #0ea5e9 !important;
+			border-color: #0ea5e9 !important;
+			color: #ffffff !important;
+			outline: none !important;
+			box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15) !important;
+		}
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
+		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
+		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
+		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active {
+			background: #0284c7 !important;
+			border-color: #0284c7 !important;
+			color: #ffffff !important;
+			outline: none !important;
+			box-shadow: none !important;
+		}
+		</style>
 		<?php
 	}
 }
