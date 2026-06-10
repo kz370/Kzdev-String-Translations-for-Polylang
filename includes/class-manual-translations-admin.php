@@ -118,15 +118,27 @@ class Manual_Translations_Admin {
 			true
 		);
 
+		// Format translations list for JavaScript usage
+		$raw_data = $this->get_translations_data();
+		$translations_list = array();
+		foreach ( $raw_data as $hash => $row ) {
+			$translations_list[] = array(
+				'hash'         => $hash,
+				'source'       => $row['source'],
+				'translations' => $row['translations'],
+			);
+		}
+
 		// Pass data and security nonces to JavaScript
 		wp_localize_script(
 			'mtfp-admin-scripts',
 			'mtfpAdminData',
 			array(
-				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-				'nonce'     => wp_create_nonce( 'mtfp_admin_nonce' ),
-				'languages' => $this->get_active_languages(),
-				'i18n'      => array(
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'mtfp_admin_nonce' ),
+				'languages'    => $this->get_active_languages(),
+				'translations' => $translations_list,
+				'i18n'         => array(
 					'saving'       => __( 'Saving...', 'manual-translations-for-polylang' ),
 					'saved'        => __( 'Saved', 'manual-translations-for-polylang' ),
 					'error'        => __( 'An error occurred.', 'manual-translations-for-polylang' ),
@@ -435,242 +447,143 @@ class Manual_Translations_Admin {
 		$languages = $this->get_active_languages();
 		$data      = $this->get_translations_data();
 
-		// Handle pagination
-		$per_page     = 20;
-		$current_page = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
-		$search_query = isset( $_GET['s'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['s'] ) ) ) : '';
-
-		// Filter data based on search
-		$filtered_data = $data;
-		if ( '' !== $search_query ) {
-			$filtered_data = array_filter( $data, function( $item ) use ( $search_query ) {
-				if ( false !== stripos( $item['source'], $search_query ) ) {
-					return true;
-				}
-				foreach ( $item['translations'] as $t ) {
-					if ( false !== stripos( $t, $search_query ) ) {
-						return true;
-					}
-				}
-				return false;
-			});
-		}
-
-		$total_items = count( $filtered_data );
-		$total_pages = ceil( $total_items / $per_page );
-		
-		// Slice data for pagination
-		$paginated_data = array_slice( $filtered_data, ( $current_page - 1 ) * $per_page, $per_page, true );
-
 		// Output settings notices
 		settings_errors( 'mtfp_messages' );
 		?>
 		<div class="wrap mtfp-admin-wrap">
-			<!-- Header Panel -->
-			<div class="mtfp-header">
-				<div class="mtfp-header-content">
-					<div class="mtfp-logo">
-						<span class="dashicons dashicons-translation"></span>
-					</div>
-					<div class="mtfp-title-group">
-						<h1><?php esc_html_e( 'Manual Translations', 'manual-translations-for-polylang' ); ?></h1>
-						<p class="description">
-							<?php esc_html_e( 'Manually translate specific front-end strings across Polylang languages. Useful for cart, checkout, or AJAX contents.', 'manual-translations-for-polylang' ); ?>
-						</p>
-					</div>
-				</div>
-				<div class="mtfp-stats">
-					<div class="mtfp-stat-card">
-						<span class="mtfp-stat-num"><?php echo esc_html( count( $data ) ); ?></span>
-						<span class="mtfp-stat-label"><?php esc_html_e( 'Total Strings', 'manual-translations-for-polylang' ); ?></span>
-					</div>
-					<div class="mtfp-stat-card">
-						<span class="mtfp-stat-num"><?php echo esc_html( count( $languages ) ); ?></span>
-						<span class="mtfp-stat-label"><?php esc_html_e( 'Active Languages', 'manual-translations-for-polylang' ); ?></span>
-					</div>
-				</div>
+			<!-- Header Title Row -->
+			<div class="mtfp-page-title-row">
+				<h1 class="wp-heading-inline"><?php esc_html_e( 'Manual Translations', 'manual-translations-for-polylang' ); ?></h1>
+				<button type="button" class="page-title-action mtfp-trigger-add-row">
+					<span class="dashicons dashicons-plus"></span>
+					<?php esc_html_e( 'Add New Translation', 'manual-translations-for-polylang' ); ?>
+				</button>
 			</div>
 
-			<!-- Main Content Grid -->
-			<div class="mtfp-grid">
-				<!-- Left Column: Table List -->
-				<div class="mtfp-col-main">
-					<div class="mtfp-card mtfp-card-table">
-						<!-- Table Actions Bar -->
-						<div class="mtfp-table-actions">
-							<!-- Bulk Actions & Search -->
-							<div class="mtfp-bulk-action-group">
-								<select id="mtfp-bulk-action" class="mtfp-select">
-									<option value=""><?php esc_html_e( 'Bulk Actions', 'manual-translations-for-polylang' ); ?></option>
-									<option value="delete"><?php esc_html_e( 'Delete Selected', 'manual-translations-for-polylang' ); ?></option>
-								</select>
-								<button id="mtfp-apply-bulk" class="button mtfp-btn-secondary" type="button"><?php esc_html_e( 'Apply', 'manual-translations-for-polylang' ); ?></button>
-							</div>
+			<!-- Main Content Table (Full Width) -->
+			<div class="mtfp-card mtfp-card-table">
+				<!-- Table Actions Bar -->
+				<div class="mtfp-table-actions">
+					<!-- Bulk Actions & Search -->
+					<div class="mtfp-bulk-action-group">
+						<select id="mtfp-bulk-action" class="mtfp-select">
+							<option value=""><?php esc_html_e( 'Bulk Actions', 'manual-translations-for-polylang' ); ?></option>
+							<option value="delete"><?php esc_html_e( 'Delete Selected', 'manual-translations-for-polylang' ); ?></option>
+						</select>
+						<button id="mtfp-apply-bulk" class="button mtfp-btn-secondary" type="button"><?php esc_html_e( 'Apply', 'manual-translations-for-polylang' ); ?></button>
+					</div>
 
-							<div class="mtfp-search-group">
-								<form method="get" action="">
-									<input type="hidden" name="page" value="manual-translations" />
-									<?php if ( isset( $_GET['post_type'] ) ) : ?>
-										<input type="hidden" name="post_type" value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['post_type'] ) ) ); ?>" />
-									<?php endif; ?>
-									<input type="search" id="mtfp-search" name="s" class="mtfp-input" placeholder="<?php esc_attr_e( 'Search strings...', 'manual-translations-for-polylang' ); ?>" value="<?php echo esc_attr( $search_query ); ?>" />
-									<button class="button mtfp-btn-secondary" type="submit"><?php esc_html_e( 'Search', 'manual-translations-for-polylang' ); ?></button>
-								</form>
+					<!-- Per Page Selector & Live Search -->
+					<div class="mtfp-filter-group" style="display: flex; gap: 16px; align-items: center;">
+						<div class="mtfp-per-page-container" style="display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--mtfp-text-muted);">
+							<label for="mtfp-per-page"><?php esc_html_e( 'Show', 'manual-translations-for-polylang' ); ?></label>
+							<select id="mtfp-per-page" class="mtfp-select">
+								<option value="10">10</option>
+								<option value="20" selected>20</option>
+								<option value="50">50</option>
+								<option value="100">100</option>
+							</select>
+							<span><?php esc_html_e( 'per page', 'manual-translations-for-polylang' ); ?></span>
+						</div>
+
+						<div class="mtfp-search-container">
+							<input type="search" id="mtfp-search" class="mtfp-input" placeholder="<?php esc_attr_e( 'Search strings...', 'manual-translations-for-polylang' ); ?>" />
+						</div>
+					</div>
+				</div>
+
+				<!-- Export Selected Form -->
+				<form id="mtfp-table-form" method="post" action="">
+					<?php wp_nonce_field( 'mtfp_csv_export', 'mtfp_export_nonce' ); ?>
+					<input type="hidden" name="mtfp_export_action" value="1" />
+
+					<!-- Custom Premium Table -->
+					<div class="mtfp-table-responsive">
+						<table class="mtfp-table">
+							<thead>
+								<tr>
+									<th class="mtfp-col-cb">
+										<input type="checkbox" id="mtfp-select-all" />
+									</th>
+									<th class="mtfp-col-source"><?php esc_html_e( 'Source String', 'manual-translations-for-polylang' ); ?></th>
+									<?php foreach ( $languages as $lang ) : ?>
+										<th><?php echo esc_html( $lang['name'] ); ?> <span class="mtfp-lang-code">(<?php echo esc_html( $lang['slug'] ); ?>)</span></th>
+									<?php endforeach; ?>
+									<th class="mtfp-col-actions"><?php esc_html_e( 'Actions', 'manual-translations-for-polylang' ); ?></th>
+								</tr>
+							</thead>
+							<tbody id="mtfp-translations-list">
+								<!-- Dynamically rendered by JavaScript -->
+							</tbody>
+						</table>
+					</div>
+
+					<!-- Table Footer with Export -->
+					<div class="mtfp-table-footer">
+						<div class="mtfp-footer-actions">
+							<button type="submit" class="button mtfp-btn-secondary" id="mtfp-export-selected">
+								<span class="dashicons dashicons-download"></span>
+								<?php esc_html_e( 'Export Selected to CSV', 'manual-translations-for-polylang' ); ?>
+							</button>
+						</div>
+						<!-- Dynamic table info and pagination links -->
+						<div class="mtfp-pagination-group" style="display: flex; gap: 20px; align-items: center;">
+							<div id="mtfp-table-info" class="mtfp-table-info" style="font-size: 13px; color: var(--mtfp-text-muted);"></div>
+							<div id="mtfp-pagination" class="mtfp-pagination"></div>
+						</div>
+					</div>
+				</form>
+			</div>
+
+			<!-- Bottom Tools Grid -->
+			<div class="mtfp-bottom-grid">
+				<!-- Card: CSV Import -->
+				<div class="mtfp-card mtfp-card-import">
+					<h2><?php esc_html_e( 'Import CSV', 'manual-translations-for-polylang' ); ?></h2>
+					<form method="post" enctype="multipart/form-data" action="">
+						<?php wp_nonce_field( 'mtfp_csv_import', 'mtfp_import_nonce' ); ?>
+						<input type="hidden" name="mtfp_import_action" value="1" />
+
+						<div class="mtfp-form-group">
+							<label for="import_file"><?php esc_html_e( 'Select CSV File', 'manual-translations-for-polylang' ); ?></label>
+							<input type="file" id="import_file" name="import_file" accept=".csv" required />
+						</div>
+
+						<div class="mtfp-form-group">
+							<label><?php esc_html_e( 'Import Mode', 'manual-translations-for-polylang' ); ?></label>
+							<div class="mtfp-radio-group">
+								<label class="mtfp-radio-label">
+									<input type="radio" name="import_mode" value="merge" checked />
+									<span><strong><?php esc_html_e( 'Merge', 'manual-translations-for-polylang' ); ?></strong> – <?php esc_html_e( 'Keep existing records; add new ones and update matches.', 'manual-translations-for-polylang' ); ?></span>
+								</label>
+								<label class="mtfp-radio-label">
+									<input type="radio" name="import_mode" value="overwrite" />
+									<span><strong><?php esc_html_e( 'Overwrite', 'manual-translations-for-polylang' ); ?></strong> – <?php esc_html_e( 'Erase all current translations and replace with CSV values.', 'manual-translations-for-polylang' ); ?></span>
+								</label>
 							</div>
 						</div>
 
-						<!-- Export Selected Form -->
-						<form id="mtfp-table-form" method="post" action="">
-							<?php wp_nonce_field( 'mtfp_csv_export', 'mtfp_export_nonce' ); ?>
-							<input type="hidden" name="mtfp_export_action" value="1" />
-
-							<!-- Custom Premium Table -->
-							<div class="mtfp-table-responsive">
-								<table class="mtfp-table">
-									<thead>
-										<tr>
-											<th class="mtfp-col-cb">
-												<input type="checkbox" id="mtfp-select-all" />
-											</th>
-											<th class="mtfp-col-source"><?php esc_html_e( 'Source String', 'manual-translations-for-polylang' ); ?></th>
-											<?php foreach ( $languages as $lang ) : ?>
-												<th><?php echo esc_html( $lang['name'] ); ?> <span class="mtfp-lang-code">(<?php echo esc_html( $lang['slug'] ); ?>)</span></th>
-											<?php endforeach; ?>
-											<th class="mtfp-col-actions"><?php esc_html_e( 'Actions', 'manual-translations-for-polylang' ); ?></th>
-										</tr>
-									</thead>
-									<tbody id="mtfp-translations-list">
-										<?php if ( empty( $paginated_data ) ) : ?>
-											<tr class="mtfp-empty-row">
-												<td colspan="<?php echo esc_attr( count( $languages ) + 3 ); ?>">
-													<div class="mtfp-empty-state">
-														<span class="dashicons dashicons-editor-help"></span>
-														<p><?php esc_html_e( 'No translation strings found.', 'manual-translations-for-polylang' ); ?></p>
-													</div>
-												</td>
-											</tr>
-										<?php else : ?>
-											<?php foreach ( $paginated_data as $hash => $row ) : ?>
-												<tr data-hash="<?php echo esc_attr( $hash ); ?>" class="mtfp-row">
-													<td>
-														<input type="checkbox" name="mtfp_selected[]" class="mtfp-row-cb" value="<?php echo esc_attr( $hash ); ?>" />
-													</td>
-													<td class="mtfp-cell-source" data-value="<?php echo esc_attr( $row['source'] ); ?>">
-														<strong class="mtfp-source-text"><?php echo esc_html( $row['source'] ); ?></strong>
-													</td>
-													<?php foreach ( $languages as $lang ) : ?>
-														<?php
-														$slug = $lang['slug'];
-														$val  = isset( $row['translations'][ $slug ] ) ? $row['translations'][ $slug ] : '';
-														?>
-														<td class="mtfp-cell-editable" data-lang="<?php echo esc_attr( $slug ); ?>" data-value="<?php echo esc_attr( $val ); ?>">
-															<span class="mtfp-editable-text"><?php echo esc_html( $val ); ?></span>
-															<span class="dashicons dashicons-edit mtfp-edit-indicator"></span>
-														</td>
-													<?php endforeach; ?>
-													<td class="mtfp-cell-actions">
-														<button type="button" class="mtfp-btn-icon mtfp-delete-row" title="<?php esc_attr_e( 'Delete', 'manual-translations-for-polylang' ); ?>">
-															<span class="dashicons dashicons-trash"></span>
-														</button>
-													</td>
-												</tr>
-											<?php endforeach; ?>
-										<?php endif; ?>
-									</tbody>
-								</table>
-							</div>
-
-							<!-- Pagination & Bulk Export -->
-							<div class="mtfp-table-footer">
-								<div class="mtfp-footer-actions">
-									<button type="submit" class="button mtfp-btn-secondary" id="mtfp-export-selected">
-										<span class="dashicons dashicons-download"></span>
-										<?php esc_html_e( 'Export Selected to CSV', 'manual-translations-for-polylang' ); ?>
-									</button>
-								</div>
-								<?php if ( $total_pages > 1 ) : ?>
-									<div class="mtfp-pagination">
-										<?php
-										echo paginate_links( array( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-											'base'      => add_query_arg( 'paged', '%#%' ),
-											'format'    => '',
-											'prev_text' => '&laquo;',
-											'next_text' => '&raquo;',
-											'total'     => $total_pages,
-											'current'   => $current_page,
-										) );
-										?>
-									</div>
-								<?php endif; ?>
-							</div>
-						</form>
-					</div>
+						<button type="submit" class="button mtfp-btn-secondary full-width">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Upload and Import', 'manual-translations-for-polylang' ); ?>
+						</button>
+					</form>
 				</div>
 
-				<!-- Right Column: Sidebar (Add String & Import/Export) -->
-				<div class="mtfp-col-side">
-					<!-- Card: Add Translation -->
-					<div class="mtfp-card mtfp-card-add">
-						<h2><?php esc_html_e( 'Add New String', 'manual-translations-for-polylang' ); ?></h2>
-						<form id="mtfp-add-string-form">
-							<div class="mtfp-form-group">
-								<label for="mtfp-add-source"><?php esc_html_e( 'Source String (Original Text)', 'manual-translations-for-polylang' ); ?></label>
-								<textarea id="mtfp-add-source" class="mtfp-textarea" rows="2" placeholder="<?php esc_attr_e( 'e.g. Subtotal:', 'manual-translations-for-polylang' ); ?>" required></textarea>
-							</div>
-
-							<div class="mtfp-divider"></div>
-
-							<div class="mtfp-lang-inputs">
-								<h3><?php esc_html_e( 'Translations', 'manual-translations-for-polylang' ); ?></h3>
-								<?php foreach ( $languages as $lang ) : ?>
-									<div class="mtfp-form-group">
-										<label for="mtfp-lang-<?php echo esc_attr( $lang['slug'] ); ?>">
-											<?php echo esc_html( $lang['name'] ); ?> <span class="mtfp-label-code">(<?php echo esc_html( $lang['slug'] ); ?>)</span>
-										</label>
-										<input type="text" id="mtfp-lang-<?php echo esc_attr( $lang['slug'] ); ?>" class="mtfp-input mtfp-lang-val" data-lang="<?php echo esc_attr( $lang['slug'] ); ?>" placeholder="<?php esc_attr_e( 'Translation value', 'manual-translations-for-polylang' ); ?>" />
-									</div>
-								<?php endforeach; ?>
-							</div>
-
-							<button type="submit" class="button mtfp-btn-primary full-width">
-								<span class="dashicons dashicons-plus"></span>
-								<?php esc_html_e( 'Add Translation String', 'manual-translations-for-polylang' ); ?>
-							</button>
-						</form>
-					</div>
-
-					<!-- Card: CSV Import -->
-					<div class="mtfp-card mtfp-card-import">
-						<h2><?php esc_html_e( 'Import CSV', 'manual-translations-for-polylang' ); ?></h2>
-						<form method="post" enctype="multipart/form-data" action="">
-							<?php wp_nonce_field( 'mtfp_csv_import', 'mtfp_import_nonce' ); ?>
-							<input type="hidden" name="mtfp_import_action" value="1" />
-
-							<div class="mtfp-form-group">
-								<label for="import_file"><?php esc_html_e( 'Select CSV File', 'manual-translations-for-polylang' ); ?></label>
-								<input type="file" id="import_file" name="import_file" accept=".csv" required />
-							</div>
-
-							<div class="mtfp-form-group">
-								<label><?php esc_html_e( 'Import Mode', 'manual-translations-for-polylang' ); ?></label>
-								<div class="mtfp-radio-group">
-									<label class="mtfp-radio-label">
-										<input type="radio" name="import_mode" value="merge" checked />
-										<span><strong><?php esc_html_e( 'Merge', 'manual-translations-for-polylang' ); ?></strong> – <?php esc_html_e( 'Keep existing records; add new ones and update matches.', 'manual-translations-for-polylang' ); ?></span>
-									</label>
-									<label class="mtfp-radio-label">
-										<input type="radio" name="import_mode" value="overwrite" />
-										<span><strong><?php esc_html_e( 'Overwrite', 'manual-translations-for-polylang' ); ?></strong> – <?php esc_html_e( 'Erase all current translations and replace with CSV values.', 'manual-translations-for-polylang' ); ?></span>
-									</label>
-								</div>
-							</div>
-
-							<button type="submit" class="button mtfp-btn-secondary full-width">
-								<span class="dashicons dashicons-upload"></span>
-								<?php esc_html_e( 'Upload and Import', 'manual-translations-for-polylang' ); ?>
-							</button>
-						</form>
-					</div>
+				<!-- Card: CSV Export All -->
+				<div class="mtfp-card mtfp-card-export-all">
+					<h2><?php esc_html_e( 'Export CSV', 'manual-translations-for-polylang' ); ?></h2>
+					<p class="description" style="margin-bottom: 20px;">
+						<?php esc_html_e( 'Download a backup of all manual translations in CSV format.', 'manual-translations-for-polylang' ); ?>
+					</p>
+					<form method="post" action="">
+						<?php wp_nonce_field( 'mtfp_csv_export', 'mtfp_export_nonce' ); ?>
+						<input type="hidden" name="mtfp_export_action" value="1" />
+						<button type="submit" class="button mtfp-btn-primary full-width">
+							<span class="dashicons dashicons-download"></span>
+							<?php esc_html_e( 'Export All to CSV', 'manual-translations-for-polylang' ); ?>
+						</button>
+					</form>
 				</div>
 			</div>
 		</div>

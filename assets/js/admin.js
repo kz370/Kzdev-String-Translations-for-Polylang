@@ -1,16 +1,142 @@
 /**
  * JavaScript handlers for the Manual Translations for Polylang admin page.
- * Implements AJAX CRUD operations, inline editing, and premium micro-interactions.
+ * Implements a reactive client-side rendering engine with live search,
+ * custom pagination, and AJAX-driven CRUD operations without page refreshes.
  */
 jQuery(document).ready(function ($) {
-	const dataTable = $('.mtfp-table');
 	const translationsList = $('#mtfp-translations-list');
-	const addForm = $('#mtfp-add-string-form');
+	const bulkActionSelect = $('#mtfp-bulk-action');
+	const applyBulkBtn = $('#mtfp-apply-bulk');
+	const selectAllCheckbox = $('#mtfp-select-all');
 
-	// --- Checkbox Selection Logic ---
+	// --- Reactive UI State ---
+	let allItems = mtfpAdminData.translations || [];
+	let currentPage = 1;
+	let perPage = parseInt($('#mtfp-per-page').val()) || 20;
+	let searchQuery = '';
+	let newRowActive = false;
 
-	// Select All Checkbox
-	$('#mtfp-select-all').on('change', function () {
+	// --- Render Engine ---
+
+	function renderTable() {
+		// Filter items based on search query
+		const query = searchQuery.toLowerCase().trim();
+		const filteredItems = allItems.filter(function (item) {
+			if (item.source.toLowerCase().includes(query)) {
+				return true;
+			}
+			for (const lang in item.translations) {
+				if (item.translations[lang].toLowerCase().includes(query)) {
+					return true;
+				}
+			}
+			return false;
+		});
+
+		const totalItems = filteredItems.length;
+		const totalPages = Math.ceil(totalItems / perPage);
+
+		// Adjust current page if out of bounds
+		if (currentPage > totalPages) {
+			currentPage = Math.max(1, totalPages);
+		}
+
+		// Calculate pagination slice
+		const start = (currentPage - 1) * perPage;
+		const end = start + perPage;
+		const pageItems = filteredItems.slice(start, end);
+
+		// 1. Render Table Body
+		if (totalItems === 0) {
+			const colSpan = mtfpAdminData.languages.length + 3;
+			translationsList.html(`
+				<tr class="mtfp-empty-row">
+					<td colspan="${colSpan}">
+						<div class="mtfp-empty-state">
+							<span class="dashicons dashicons-editor-help"></span>
+							<p>${allItems.length === 0 ? 'No translation strings found.' : 'No matching translation strings found.'}</p>
+						</div>
+					</td>
+				</tr>
+			`);
+			$('#mtfp-table-info').text('');
+			$('#mtfp-pagination').html('');
+			selectAllCheckbox.prop('checked', false);
+			return;
+		}
+
+		let tbodyHtml = '';
+		pageItems.forEach(function (row) {
+			let langCells = '';
+			mtfpAdminData.languages.forEach(function (lang) {
+				const val = row.translations[lang.slug] || '';
+				langCells += `
+					<td class="mtfp-cell-editable" data-lang="${lang.slug}" data-value="${escapeHtml(val)}">
+						<span class="mtfp-editable-text">${escapeHtml(val)}</span>
+						<span class="dashicons dashicons-edit mtfp-edit-indicator"></span>
+					</td>
+				`;
+			});
+
+			tbodyHtml += `
+				<tr data-hash="${row.hash}" class="mtfp-row">
+					<td>
+						<input type="checkbox" name="mtfp_selected[]" class="mtfp-row-cb" value="${row.hash}" />
+					</td>
+					<td class="mtfp-cell-source" data-value="${escapeHtml(row.source)}">
+						<strong class="mtfp-source-text">${escapeHtml(row.source)}</strong>
+					</td>
+					${langCells}
+					<td class="mtfp-cell-actions">
+						<button type="button" class="mtfp-btn-icon mtfp-delete-row" title="Delete">
+							<span class="dashicons dashicons-trash"></span>
+						</button>
+					</td>
+				</tr>
+			`;
+		});
+
+		translationsList.html(tbodyHtml);
+
+		// Prepend new row if it is active and not saved yet
+		if (newRowActive && $('#mtfp-row-new').length) {
+			translationsList.prepend($('#mtfp-row-new'));
+		}
+
+		// Update checkboxes selection styling and state
+		updateRowSelectionStyles();
+		updateSelectAllCheckboxState();
+
+		// 2. Render Info text: "Showing X to Y of Z entries"
+		const showingStart = totalItems === 0 ? 0 : start + 1;
+		const showingEnd = Math.min(end, totalItems);
+		$('#mtfp-table-info').text(`Showing ${showingStart} to ${showingEnd} of ${totalItems} entries`);
+
+		// 3. Render Pagination Buttons
+		let paginationHtml = '';
+		if (totalPages > 1) {
+			// Prev Button
+			paginationHtml += `<a href="#" class="mtfp-page-link prev ${currentPage === 1 ? 'disabled' : ''}" data-page="${currentPage - 1}">&laquo;</a>`;
+
+			// Page numbers
+			for (let i = 1; i <= totalPages; i++) {
+				if (i === currentPage) {
+					paginationHtml += `<span class="current">${i}</span>`;
+				} else {
+					paginationHtml += `<a href="#" class="mtfp-page-link" data-page="${i}">${i}</a>`;
+				}
+			}
+
+			// Next Button
+			paginationHtml += `<a href="#" class="mtfp-page-link next ${currentPage === totalPages ? 'disabled' : ''}" data-page="${currentPage + 1}">&raquo;</a>`;
+		}
+		$('#mtfp-pagination').html(paginationHtml);
+	}
+
+	// --- Checkbox Selection Handlers ---
+
+	// Select All Checkbox Toggle
+	selectAllCheckbox.on('change', function () {
 		const isChecked = $(this).prop('checked');
 		$('.mtfp-row-cb').prop('checked', isChecked);
 		updateRowSelectionStyles();
@@ -18,9 +144,8 @@ jQuery(document).ready(function ($) {
 
 	// Individual Checkbox Changes
 	translationsList.on('change', '.mtfp-row-cb', function () {
-		const allChecked = $('.mtfp-row-cb:checked').length === $('.mtfp-row-cb').length;
-		$('#mtfp-select-all').prop('checked', allChecked);
 		updateRowSelectionStyles();
+		updateSelectAllCheckboxState();
 	});
 
 	function updateRowSelectionStyles() {
@@ -35,28 +160,132 @@ jQuery(document).ready(function ($) {
 		});
 	}
 
-	// --- CRUD Operations via AJAX ---
+	function updateSelectAllCheckboxState() {
+		const visibleCbs = $('.mtfp-row-cb');
+		if (visibleCbs.length === 0) {
+			selectAllCheckbox.prop('checked', false);
+			return;
+		}
+		const allChecked = visibleCbs.filter(':checked').length === visibleCbs.length;
+		selectAllCheckbox.prop('checked', allChecked);
+	}
 
-	// Add New Translation
-	addForm.on('submit', function (e) {
+	// --- Live Filter & Search Listeners ---
+
+	// Live Search Input handler
+	$('#mtfp-search').on('input', function () {
+		searchQuery = $(this).val();
+		currentPage = 1;
+		renderTable();
+	});
+
+	// Per-Page Selector dropdown
+	$('#mtfp-per-page').on('change', function () {
+		perPage = parseInt($(this).val()) || 20;
+		currentPage = 1;
+		renderTable();
+	});
+
+	// Pagination Link Click handlers
+	$('#mtfp-pagination').on('click', '.mtfp-page-link', function (e) {
 		e.preventDefault();
+		if ($(this).hasClass('disabled')) {
+			return;
+		}
+		currentPage = parseInt($(this).data('page'));
+		renderTable();
+	});
 
-		const sourceVal = $('#mtfp-add-source').val().trim();
-		if (!sourceVal) {
-			alert(mtfpAdminData.i18n.emptySource);
+	// --- Inline Row Insertion Logic ---
+
+	$('.mtfp-trigger-add-row').on('click', function () {
+		if ($('#mtfp-row-new').length) {
+			$('#mtfp-row-new .mtfp-new-source-input').focus();
 			return;
 		}
 
-		// Gather translation languages
-		const translations = {};
-		$('.mtfp-lang-val').each(function () {
-			const lang = $(this).data('lang');
-			translations[lang] = $(this).val();
+		newRowActive = true;
+		$('.mtfp-empty-row').hide();
+
+		const languages = mtfpAdminData.languages;
+		let langCells = '';
+		languages.forEach(function (lang) {
+			langCells += `
+				<td class="mtfp-cell-lang-new" data-lang="${lang.slug}">
+					<input type="text" class="mtfp-new-lang-input mtfp-input" placeholder="Translation value..." style="width: 100%;" />
+				</td>
+			`;
 		});
 
-		const submitBtn = addForm.find('button[type="submit"]');
-		const originalHtml = submitBtn.html();
-		submitBtn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> ' + mtfpAdminData.i18n.saving);
+		const newRowHtml = `
+			<tr id="mtfp-row-new" class="mtfp-row mtfp-row-new">
+				<td class="mtfp-col-cb">
+					<input type="checkbox" disabled />
+				</td>
+				<td class="mtfp-cell-source-new">
+					<input type="text" class="mtfp-new-source-input mtfp-input" placeholder="e.g. Subtotal:" style="width: 100%; font-weight: 600;" />
+				</td>
+				${langCells}
+				<td class="mtfp-cell-actions" style="white-space: nowrap;">
+					<button type="button" class="mtfp-btn-icon mtfp-save-new-row" title="Save">
+						<span class="dashicons dashicons-saved" style="color: var(--mtfp-success);"></span>
+					</button>
+					<button type="button" class="mtfp-btn-icon mtfp-cancel-new-row" title="Cancel">
+						<span class="dashicons dashicons-no-alt" style="color: var(--mtfp-danger);"></span>
+					</button>
+				</td>
+			</tr>
+		`;
+
+		translationsList.prepend(newRowHtml);
+
+		const newRow = $('#mtfp-row-new');
+		newRow.hide().fadeIn(250);
+		newRow.find('.mtfp-new-source-input').focus();
+	});
+
+	// Cancel Row Creation
+	translationsList.on('click', '.mtfp-cancel-new-row', function () {
+		const newRow = $('#mtfp-row-new');
+		newRow.fadeOut(200, function () {
+			newRow.remove();
+			newRowActive = false;
+			renderTable();
+		});
+	});
+
+	// Save Row Creation
+	function saveNewRow() {
+		const newRow = $('#mtfp-row-new');
+		if (newRow.length === 0) {
+			return;
+		}
+
+		const sourceVal = newRow.find('.mtfp-new-source-input').val().trim();
+		if (!sourceVal) {
+			alert(mtfpAdminData.i18n.emptySource);
+			newRow.find('.mtfp-new-source-input').focus();
+			return;
+		}
+
+		// Check if source already exists
+		const existingMatch = allItems.find(i => i.source.toLowerCase() === sourceVal.toLowerCase());
+		if (existingMatch) {
+			alert("This source string already exists in the manual translations list.");
+			newRow.find('.mtfp-new-source-input').focus();
+			return;
+		}
+
+		newRow.find('input').prop('disabled', true);
+		newRow.find('button').prop('disabled', true);
+
+		const translations = {};
+		newRow.find('.mtfp-cell-lang-new').each(function () {
+			const cell = $(this);
+			const lang = cell.data('lang');
+			const val = cell.find('.mtfp-new-lang-input').val().trim();
+			translations[lang] = val;
+		});
 
 		$.ajax({
 			url: mtfpAdminData.ajaxUrl,
@@ -70,25 +299,56 @@ jQuery(document).ready(function ($) {
 			},
 			success: function (response) {
 				if (response.success) {
-					// Clear form fields
-					$('#mtfp-add-source').val('');
-					$('.mtfp-lang-val').val('');
+					// Add to local dataset reactively
+					allItems.unshift({
+						hash: response.data.hash,
+						source: response.data.row.source,
+						translations: response.data.row.translations
+					});
+					
+					newRowActive = false;
+					newRow.remove();
+					
+					// Go back to page 1 and render table
+					currentPage = 1;
+					renderTable();
 
-					// Reload page to show new item with pagination/sorting properly, or inject dynamically
-					// For best UX, we will show a quick message and reload to ensure correct pagination
-					location.reload();
+					// Find row and flash success
+					setTimeout(function () {
+						const addedRow = translationsList.find(`tr[data-hash="${response.data.hash}"]`);
+						addedRow.css('background-color', 'rgba(16, 185, 129, 0.2)');
+						setTimeout(function () {
+							addedRow.css('background-color', '');
+						}, 600);
+					}, 50);
 				} else {
 					alert(response.data.message || mtfpAdminData.i18n.error);
+					newRow.find('input').prop('disabled', false);
+					newRow.find('button').prop('disabled', false);
+					newRow.find('.mtfp-new-source-input').focus();
 				}
 			},
 			error: function () {
 				alert(mtfpAdminData.i18n.error);
-			},
-			complete: function () {
-				submitBtn.prop('disabled', false).html(originalHtml);
+				newRow.find('input').prop('disabled', false);
+				newRow.find('button').prop('disabled', false);
 			}
 		});
+	}
+
+	translationsList.on('click', '.mtfp-save-new-row', function () {
+		saveNewRow();
 	});
+
+	translationsList.on('keydown', '#mtfp-row-new input', function (e) {
+		if (e.which === 13) {
+			saveNewRow();
+		} else if (e.which === 27) {
+			$('.mtfp-cancel-new-row').trigger('click');
+		}
+	});
+
+	// --- AJAX CRUD Actions ---
 
 	// Delete Individual Translation
 	translationsList.on('click', '.mtfp-delete-row', function () {
@@ -113,12 +373,10 @@ jQuery(document).ready(function ($) {
 			},
 			success: function (response) {
 				if (response.success) {
-					row.fadeOut(300, function () {
-						row.remove();
-						// If no rows remain, show empty state
-						if (translationsList.find('.mtfp-row').length === 0) {
-							location.reload();
-						}
+					row.fadeOut(250, function () {
+						// Remove from local array
+						allItems = allItems.filter(i => i.hash !== hash);
+						renderTable();
 					});
 				} else {
 					alert(response.data.message || mtfpAdminData.i18n.error);
@@ -133,8 +391,8 @@ jQuery(document).ready(function ($) {
 	});
 
 	// Bulk Delete Action
-	$('#mtfp-apply-bulk').on('click', function () {
-		const action = $('#mtfp-bulk-action').val();
+	applyBulkBtn.on('click', function () {
+		const action = bulkActionSelect.val();
 		if (action !== 'delete') {
 			return;
 		}
@@ -154,8 +412,7 @@ jQuery(document).ready(function ($) {
 			hashes.push($(this).val());
 		});
 
-		const applyBtn = $(this);
-		applyBtn.prop('disabled', true).text(mtfpAdminData.i18n.saving);
+		applyBulkBtn.prop('disabled', true).text(mtfpAdminData.i18n.saving);
 
 		$.ajax({
 			url: mtfpAdminData.ajaxUrl,
@@ -168,15 +425,19 @@ jQuery(document).ready(function ($) {
 			},
 			success: function (response) {
 				if (response.success) {
-					location.reload();
+					// Remove from local dataset reactively
+					allItems = allItems.filter(i => !hashes.includes(i.hash));
+					renderTable();
 				} else {
 					alert(response.data.message || mtfpAdminData.i18n.error);
-					applyBtn.prop('disabled', false).text('Apply');
 				}
 			},
 			error: function () {
 				alert(mtfpAdminData.i18n.error);
-				applyBtn.prop('disabled', false).text('Apply');
+			},
+			complete: function () {
+				applyBulkBtn.prop('disabled', false).text('Apply');
+				selectAllCheckbox.prop('checked', false);
 			}
 		});
 	});
@@ -184,7 +445,6 @@ jQuery(document).ready(function ($) {
 	// --- Inline Editing for Cell Translations ---
 
 	translationsList.on('click', '.mtfp-cell-editable', function (e) {
-		// Prevent editing multiple cells simultaneously
 		if ($(this).find('input').length > 0) {
 			return;
 		}
@@ -194,37 +454,30 @@ jQuery(document).ready(function ($) {
 		const lang = cell.data('lang');
 		const row = cell.closest('tr');
 		const hash = row.data('hash');
-		const sourceStr = row.find('.mtfp-cell-source').data('value');
+		
+		// Find matching object in local memory
+		const inMemoryRow = allItems.find(i => i.hash === hash);
+		if (!inMemoryRow) {
+			return;
+		}
 
-		// Create input field
 		const input = $('<input type="text" class="mtfp-inline-input" />').val(originalText);
 		cell.html(input);
 		input.focus();
 
-		// Handle inline saving
 		function saveInline() {
 			const newVal = input.val().trim();
 
-			// If no change, restore original value
 			if (newVal === originalText) {
 				restoreCell(originalText);
 				return;
 			}
 
-			// Show loader in cell
 			cell.html('<span class="dashicons dashicons-update spin"></span> ' + mtfpAdminData.i18n.saving);
 
-			// Gather translations for this row (include existing unchanged cells)
-			const rowTranslations = {};
-			row.find('.mtfp-cell-editable').each(function () {
-				const c = $(this);
-				const cLang = c.data('lang');
-				if (cLang === lang) {
-					rowTranslations[cLang] = newVal;
-				} else {
-					rowTranslations[cLang] = c.data('value');
-				}
-			});
+			// Gather sibling values from inMemoryRow to preserve other columns
+			const rowTranslations = $.extend({}, inMemoryRow.translations);
+			rowTranslations[lang] = newVal;
 
 			$.ajax({
 				url: mtfpAdminData.ajaxUrl,
@@ -233,15 +486,17 @@ jQuery(document).ready(function ($) {
 				data: {
 					action: 'mtfp_save_translation',
 					nonce: mtfpAdminData.nonce,
-					source: sourceStr,
+					source: inMemoryRow.source,
 					translations: rowTranslations
 				},
 				success: function (response) {
 					if (response.success) {
+						// Save value locally
+						inMemoryRow.translations[lang] = newVal;
 						cell.data('value', newVal);
 						restoreCell(newVal);
-						
-						// Premium Success Flash Animation
+
+						// Flash Cell success
 						cell.css('background-color', 'rgba(16, 185, 129, 0.2)');
 						setTimeout(function () {
 							cell.css('background-color', '');
@@ -259,31 +514,32 @@ jQuery(document).ready(function ($) {
 		}
 
 		function restoreCell(text) {
-			cell.html('<span class="mtfp-editable-text">' + escapeHtml(text) + '</span><span class="dashicons dashicons-edit mtfp-edit-indicator"></span>');
+			cell.html(`<span class="mtfp-editable-text">${escapeHtml(text)}</span><span class="dashicons dashicons-edit mtfp-edit-indicator"></span>`);
 		}
 
-		// Save on blur or enter key
 		input.on('blur', function () {
 			saveInline();
 		});
 
 		input.on('keydown', function (keyEvent) {
-			if (keyEvent.which === 13) { // Enter key
-				input.off('blur'); // Prevent double triggers
+			if (keyEvent.which === 13) {
+				input.off('blur');
 				saveInline();
-			} else if (keyEvent.which === 27) { // Escape key
+			} else if (keyEvent.which === 27) {
 				input.off('blur');
 				restoreCell(originalText);
 			}
 		});
 	});
 
-	// Helper to escape HTML tags
+	// --- Helper Utilities ---
+
+	// Escape HTML
 	function escapeHtml(string) {
 		return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 	}
 
-	// Dynamic spins style
+	// Spin keyframes loader injection
 	const spinStyle = `
 		@keyframes mtfp-spin {
 			0% { transform: rotate(0deg); }
@@ -293,6 +549,15 @@ jQuery(document).ready(function ($) {
 			animation: mtfp-spin 1.5s linear infinite;
 			display: inline-block;
 		}
+		.mtfp-pagination a.disabled {
+			pointer-events: none;
+			opacity: 0.5;
+			background: #f1f5f9;
+			color: #94a3b8;
+		}
 	`;
 	$('<style>').text(spinStyle).appendTo('head');
+
+	// --- Boot Engine ---
+	renderTable();
 });
