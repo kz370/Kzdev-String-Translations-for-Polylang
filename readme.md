@@ -1,5 +1,5 @@
 === Manual Translations for Polylang ===
-Contributors: kzdev
+Contributors: kz370
 Tags: polylang, translation, localization, multilingual, ajax
 Requires at least: 5.0
 Tested up to: 7.0

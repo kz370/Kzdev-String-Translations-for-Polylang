@@ -1385,15 +1385,15 @@ jQuery(document).ready(function ($) {
 
 		$browseBtn.on('click', function (e) {
 			e.stopPropagation();
-			$fileInput.trigger('click');
+			$fileInput[0].click();
 		});
 
 		$dropzone.on('click', function (e) {
-			if ($(e.target).closest('.mtfp-dropzone-remove').length) {
+			if ($(e.target).is('#import_file') || $(e.target).closest('.mtfp-dropzone-remove').length) {
 				return;
 			}
 			if (!$dropzone.hasClass('has-file')) {
-				$fileInput.trigger('click');
+				$fileInput[0].click();
 			}
 		});
 
