@@ -173,7 +173,7 @@ class Manual_Translations_Admin {
 		}
 
 		if ( $is_post_edit ) {
-			$post_id = isset( $_GET['post'] ) ? (int) $_GET['post'] : 0;
+			$post_id = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only GET access on an admin screen.
 			$post = get_post( $post_id );
 			if ( $post ) {
 				$lang = function_exists( 'pll_get_post_language' ) ? pll_get_post_language( $post->ID ) : '';
@@ -189,8 +189,8 @@ class Manual_Translations_Admin {
 		}
 
 		if ( $is_term_edit ) {
-			$term_id = isset( $_GET['tag_ID'] ) ? (int) $_GET['tag_ID'] : 0;
-			$taxonomy = isset( $_GET['taxonomy'] ) ? sanitize_text_field( $_GET['taxonomy'] ) : '';
+			$term_id = isset( $_GET['tag_ID'] ) ? absint( wp_unslash( $_GET['tag_ID'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only GET access on an admin screen.
+			$taxonomy = isset( $_GET['taxonomy'] ) ? sanitize_text_field( wp_unslash( $_GET['taxonomy'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only GET access on an admin screen.
 			$term = get_term( $term_id, $taxonomy );
 			if ( $term && ! is_wp_error( $term ) ) {
 				$lang = function_exists( 'pll_get_term_language' ) ? pll_get_term_language( $term->term_id ) : '';
@@ -319,6 +319,7 @@ class Manual_Translations_Admin {
 
 		if ( $count > 0 ) {
 			update_option( 'manual_translations_strings', $data );
+			/* translators: %d: number of deleted translations. */
 			wp_send_json_success( array( 'message' => sprintf( _n( 'Successfully deleted %d translation.', 'Successfully deleted %d translations.', $count, 'manual-translations-for-polylang' ), $count ) ) );
 		}
 
@@ -336,7 +337,7 @@ class Manual_Translations_Admin {
 
 		// Set execution time limit to 2 minutes for large plugin directories or post queries
 		if ( function_exists( 'set_time_limit' ) ) {
-			@set_time_limit( 120 );
+			@set_time_limit( 120 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Allow longer scans of large plugin directories.
 		}
 
 		$target = isset( $_POST['target'] ) ? sanitize_text_field( wp_unslash( $_POST['target'] ) ) : 'theme';
@@ -376,7 +377,7 @@ class Manual_Translations_Admin {
 				}
 
 				// Content
-				$content = trim( strip_tags( $post->post_content ) );
+				$content = trim( wp_strip_all_tags( $post->post_content ) );
 				if ( ! empty( $content ) ) {
 					// Split by common delimiters (newline, periods, brackets, etc.)
 					$lines = preg_split( '/[\r\n\.]+/', $content );
@@ -428,7 +429,7 @@ class Manual_Translations_Admin {
 					}
 
 					// Add term description if not empty
-					$description = trim( strip_tags( $term->description ) );
+					$description = trim( wp_strip_all_tags( $term->description ) );
 					if ( ! empty( $description ) && strlen( $description ) > 1 && ! is_numeric( $description ) ) {
 						$wp_strings[ $description ] = true;
 					}
@@ -606,6 +607,7 @@ class Manual_Translations_Admin {
 		if ( ! empty( $imported ) ) {
 			update_option( 'manual_translations_strings', $data );
 			wp_send_json_success( array(
+				/* translators: %d: number of imported strings. */
 				'message'  => sprintf( _n( 'Successfully imported %d string.', 'Successfully imported %d strings.', count( $imported ), 'manual-translations-for-polylang' ), count( $imported ) ),
 				'imported' => $imported,
 			) );
@@ -713,6 +715,7 @@ class Manual_Translations_Admin {
 
 		if ( 200 !== $response_code ) {
 			$error_data = json_decode( $response_body, true );
+			/* translators: %d: HTTP status code returned by the translation API. */
 			$error_message = $error_data['error']['message'] ?? sprintf( __( 'API returned HTTP %d', 'manual-translations-for-polylang' ), $response_code );
 			return new WP_Error( 'api_error', $error_message );
 		}
@@ -946,12 +949,14 @@ class Manual_Translations_Admin {
 		if ( 'openai' === $provider && empty( $translated_title ) ) {
 			$translated_title = $this->translate_via_openai( $source_post->post_title, $target_lang );
 			if ( is_wp_error( $translated_title ) ) {
+				/* translators: %s: error message returned by the translation provider. */
 				wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate title: %s', 'manual-translations-for-polylang' ), $translated_title->get_error_message() ) ) );
 			}
 
 			if ( ! empty( $source_post->post_content ) ) {
 				$translated_content = $this->translate_via_openai( $source_post->post_content, $target_lang );
 				if ( is_wp_error( $translated_content ) ) {
+					/* translators: %s: error message returned by the translation provider. */
 					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate content: %s', 'manual-translations-for-polylang' ), $translated_content->get_error_message() ) ) );
 				}
 			}
@@ -959,6 +964,7 @@ class Manual_Translations_Admin {
 			if ( ! empty( $source_post->post_excerpt ) ) {
 				$translated_excerpt = $this->translate_via_openai( $source_post->post_excerpt, $target_lang );
 				if ( is_wp_error( $translated_excerpt ) ) {
+					/* translators: %s: error message returned by the translation provider. */
 					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate excerpt: %s', 'manual-translations-for-polylang' ), $translated_excerpt->get_error_message() ) ) );
 				}
 			}
@@ -1056,12 +1062,14 @@ class Manual_Translations_Admin {
 		if ( 'openai' === $provider && empty( $translated_name ) ) {
 			$translated_name = $this->translate_via_openai( $source_term->name, $target_lang );
 			if ( is_wp_error( $translated_name ) ) {
+				/* translators: %s: error message returned by the translation provider. */
 				wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate name: %s', 'manual-translations-for-polylang' ), $translated_name->get_error_message() ) ) );
 			}
 
 			if ( ! empty( $source_term->description ) ) {
 				$translated_description = $this->translate_via_openai( $source_term->description, $target_lang );
 				if ( is_wp_error( $translated_description ) ) {
+					/* translators: %s: error message returned by the translation provider. */
 					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate description: %s', 'manual-translations-for-polylang' ), $translated_description->get_error_message() ) ) );
 				}
 			}
@@ -1147,7 +1155,7 @@ class Manual_Translations_Admin {
 
 		// Output CSV headers
 		header( 'Content-Type: text/csv; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename="manual-translations-' . date( 'Y-m-d' ) . '.csv"' );
+		header( 'Content-Disposition: attachment; filename="manual-translations-' . gmdate( 'Y-m-d' ) . '.csv"' );
 		header( 'Pragma: no-cache' );
 		header( 'Expires: 0' );
 
@@ -1178,7 +1186,7 @@ class Manual_Translations_Admin {
 			fputcsv( $output, $line );
 		}
 
-		fclose( $output );
+		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Streaming CSV output to php://output.
 		exit;
 	}
 
@@ -1207,8 +1215,8 @@ class Manual_Translations_Admin {
 			return;
 		}
 
-		$file = sanitize_meta( 'import_file', $_FILES['import_file']['tmp_name'], '' );
-		if ( ! is_uploaded_file( $_FILES['import_file']['tmp_name'] ) ) {
+		$tmp_file = isset( $_FILES['import_file']['tmp_name'] ) ? sanitize_text_field( wp_unslash( $_FILES['import_file']['tmp_name'] ) ) : '';
+		if ( ! is_uploaded_file( $tmp_file ) ) {
 			add_settings_error(
 				'mtfp_messages',
 				'mtfp_import_error',
@@ -1218,7 +1226,7 @@ class Manual_Translations_Admin {
 			return;
 		}
 
-		$handle = fopen( $_FILES['import_file']['tmp_name'], 'r' );
+		$handle = fopen( $tmp_file, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Read-only access to a temporary uploaded file.
 		if ( ! $handle ) {
 			add_settings_error(
 				'mtfp_messages',
@@ -1235,7 +1243,7 @@ class Manual_Translations_Admin {
 		// Read headers
 		$headers = fgetcsv( $handle );
 		if ( ! $headers || count( $headers ) < 1 || 'Source String' !== trim( $headers[0] ) ) {
-			fclose( $handle );
+			fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Parsing a temporary uploaded CSV file.
 			add_settings_error(
 				'mtfp_messages',
 				'mtfp_import_error',
@@ -1284,13 +1292,14 @@ class Manual_Translations_Admin {
 			$count++;
 		}
 
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Parsing a temporary uploaded CSV file.
 
 		update_option( 'manual_translations_strings', $data );
 
 		add_settings_error(
 			'mtfp_messages',
 			'mtfp_import_success',
+			/* translators: %d: number of imported translation strings. */
 			sprintf( _n( 'Successfully imported %d translation string.', 'Successfully imported %d translation strings.', $count, 'manual-translations-for-polylang' ), $count ),
 			'success'
 		);

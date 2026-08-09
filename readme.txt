@@ -1,15 +1,15 @@
 === Manual Translations for Polylang ===
 Contributors: kzdev
-Tags: polylang, translation, manual translation, localization, ajax translation, multi-language, multi-lingual
+Tags: polylang, translation, localization, multilingual, ajax
 Requires at least: 5.0
-Tested up to: 6.9
+Tested up to: 7.0
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 # Manual Translations for Polylang
 
-Manually translate specific frontend strings on the fly using a MutationObserver, supporting all active Polylang languages. Simplifies translation tweaks with CSV import/export.
+Manually translate frontend strings on the fly with full Polylang support and CSV import/export.
 
 ---
 

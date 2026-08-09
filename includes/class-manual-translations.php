@@ -21,19 +21,7 @@ class Manual_Translations {
 	 * Run the class actions.
 	 */
 	public function run() {
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_translations' ) );
-	}
-
-	/**
-	 * Load the text domain for internationalization (i18n).
-	 */
-	public function load_textdomain() {
-		load_plugin_textdomain(
-			'manual-translations-for-polylang',
-			false,
-			dirname( MTFP_PLUGIN_BASENAME ) . '/languages'
-		);
 	}
 
 	/**
