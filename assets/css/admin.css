@@ -968,3 +968,123 @@ body.wp-core-ui .button.mtfp-term-retranslate-btn:active {
 	border-radius: 4px;
 }
 
+/* Modern File Dropzone */
+.mtfp-file-dropzone {
+	position: relative;
+	border: 2px dashed var(--mtfp-border-focus);
+	border-radius: var(--mtfp-radius-lg);
+	background: var(--mtfp-bg);
+	padding: 24px 16px;
+	text-align: center;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mtfp-file-dropzone:hover {
+	border-color: var(--mtfp-primary);
+	background: var(--mtfp-primary-light);
+}
+
+.mtfp-file-dropzone.is-dragover {
+	border-color: var(--mtfp-primary);
+	background: var(--mtfp-primary-light);
+	box-shadow: 0 0 0 3px var(--mtfp-primary-ring);
+}
+
+.mtfp-file-dropzone.has-file {
+	border-style: solid;
+	border-color: var(--mtfp-success);
+	background: var(--mtfp-success-light);
+	cursor: default;
+}
+
+.mtfp-file-dropzone.has-error {
+	border-color: var(--mtfp-danger);
+	background: var(--mtfp-danger-light);
+}
+
+.mtfp-file-dropzone input[type="file"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.mtfp-dropzone-icon {
+	font-size: 40px;
+	width: 40px;
+	height: 40px;
+	color: var(--mtfp-primary);
+	margin-bottom: 8px;
+}
+
+.mtfp-dropzone-title {
+	margin: 0 0 4px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--mtfp-text);
+}
+
+.mtfp-dropzone-subtitle {
+	margin: 0 0 10px;
+	font-size: 12px;
+	color: var(--mtfp-text-muted);
+}
+
+.mtfp-dropzone-file {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 10px 12px;
+	background: #ffffff;
+	border: 1px solid var(--mtfp-border);
+	border-radius: var(--mtfp-radius-md);
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--mtfp-text);
+}
+
+.mtfp-dropzone-file[hidden] {
+	display: none;
+}
+
+.mtfp-dropzone-file .dashicons {
+	color: var(--mtfp-success);
+}
+
+.mtfp-dropzone-filename {
+	word-break: break-all;
+}
+
+.mtfp-dropzone-remove {
+	border: none;
+	background: none;
+	cursor: pointer;
+	font-size: 18px;
+	line-height: 1;
+	color: var(--mtfp-text-muted);
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.mtfp-dropzone-remove:hover {
+	color: var(--mtfp-danger);
+	background: var(--mtfp-danger-light);
+}
+
+.mtfp-dropzone-error {
+	margin: 10px 0 0;
+	font-size: 12px;
+	color: var(--mtfp-danger);
+}
+
+.mtfp-dropzone-error[hidden] {
+	display: none;
+}
+

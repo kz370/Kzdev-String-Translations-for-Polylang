@@ -1430,10 +1430,27 @@ class Manual_Translations_Admin {
 						<?php wp_nonce_field( 'mtfp_csv_import', 'mtfp_import_nonce' ); ?>
 						<input type="hidden" name="mtfp_import_action" value="1" />
 
-						<div class="mtfp-form-group">
-							<label for="import_file"><?php esc_html_e( 'Select CSV File', 'manual-translations-for-polylang' ); ?></label>
-							<input type="file" id="import_file" name="import_file" accept=".csv" required />
+					<div class="mtfp-form-group">
+						<label for="import_file"><?php esc_html_e( 'Select CSV File', 'manual-translations-for-polylang' ); ?></label>
+						<div class="mtfp-file-dropzone" id="mtfp-file-dropzone">
+							<input type="file" id="import_file" name="import_file" accept=".csv" />
+							<div class="mtfp-dropzone-content">
+								<span class="dashicons dashicons-cloud-upload mtfp-dropzone-icon"></span>
+								<p class="mtfp-dropzone-title"><?php esc_html_e( 'Drag & drop your CSV file here', 'manual-translations-for-polylang' ); ?></p>
+								<p class="mtfp-dropzone-subtitle"><?php esc_html_e( 'or', 'manual-translations-for-polylang' ); ?></p>
+								<button type="button" class="button mtfp-btn-secondary mtfp-dropzone-browse">
+									<span class="dashicons dashicons-media-spreadsheet"></span>
+									<?php esc_html_e( 'Browse Files', 'manual-translations-for-polylang' ); ?>
+								</button>
+							</div>
+							<div class="mtfp-dropzone-file" hidden>
+								<span class="dashicons dashicons-yes-alt"></span>
+								<span class="mtfp-dropzone-filename"></span>
+								<button type="button" class="mtfp-dropzone-remove" aria-label="<?php esc_attr_e( 'Remove file', 'manual-translations-for-polylang' ); ?>">&times;</button>
+							</div>
+							<p class="mtfp-dropzone-error" role="alert" hidden></p>
 						</div>
+					</div>
 
 						<div class="mtfp-form-group">
 							<label><?php esc_html_e( 'Import Mode', 'manual-translations-for-polylang' ); ?></label>

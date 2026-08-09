@@ -1333,6 +1333,100 @@ jQuery(document).ready(function ($) {
 		}
 	}
 
+	// --- Modern CSV File Dropzone ---
+	(function () {
+		const $dropzone = $('#mtfp-file-dropzone');
+		if ($dropzone.length === 0) {
+			return;
+		}
+
+		const $fileInput = $dropzone.find('#import_file');
+		const $content = $dropzone.find('.mtfp-dropzone-content');
+		const $fileRow = $dropzone.find('.mtfp-dropzone-file');
+		const $fileNameEl = $dropzone.find('.mtfp-dropzone-filename');
+		const $errorEl = $dropzone.find('.mtfp-dropzone-error');
+		const $browseBtn = $dropzone.find('.mtfp-dropzone-browse');
+		const $removeBtn = $dropzone.find('.mtfp-dropzone-remove');
+
+		function showError(message) {
+			$errorEl.text(message).attr('hidden', false);
+			$dropzone.addClass('has-error');
+		}
+
+		function clearError() {
+			$errorEl.text('').attr('hidden', true);
+			$dropzone.removeClass('has-error');
+		}
+
+		function setFile(file) {
+			if (!file) {
+				return;
+			}
+			const name = file.name || '';
+			if (!name.toLowerCase().endsWith('.csv')) {
+				$fileInput.val('');
+				showError('Please choose a valid CSV file (.csv).');
+				return;
+			}
+			clearError();
+			$fileNameEl.text(name);
+			$fileRow.attr('hidden', false);
+			$content.attr('hidden', true);
+			$dropzone.addClass('has-file');
+		}
+
+		function clearFile() {
+			$fileInput.val('');
+			$fileRow.attr('hidden', true);
+			$content.attr('hidden', false);
+			$dropzone.removeClass('has-file');
+			clearError();
+		}
+
+		$browseBtn.on('click', function (e) {
+			e.stopPropagation();
+			$fileInput.trigger('click');
+		});
+
+		$dropzone.on('click', function (e) {
+			if ($(e.target).closest('.mtfp-dropzone-remove').length) {
+				return;
+			}
+			if (!$dropzone.hasClass('has-file')) {
+				$fileInput.trigger('click');
+			}
+		});
+
+		$fileInput.on('change', function () {
+			setFile(this.files[0]);
+		});
+
+		$removeBtn.on('click', function (e) {
+			e.stopPropagation();
+			clearFile();
+		});
+
+		$dropzone.on('dragenter dragover', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$dropzone.addClass('is-dragover');
+		});
+
+		$dropzone.on('dragleave drop', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$dropzone.removeClass('is-dragover');
+		});
+
+		$dropzone.on('drop', function (e) {
+			const files = e.originalEvent.dataTransfer ? e.originalEvent.dataTransfer.files : null;
+			if (files && files.length > 0) {
+				$fileInput.prop('files', files);
+				setFile(files[0]);
+			}
+		});
+	})();
+
 	// --- Boot Engine ---
 	renderTable();
 });
