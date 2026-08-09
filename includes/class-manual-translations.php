@@ -106,7 +106,7 @@ class Manual_Translations {
 			'mtfp-frontend-translation',
 			MTFP_PLUGIN_URL . 'assets/js/frontend.js',
 			array(),
-			MTFP_VERSION,
+			filemtime( MTFP_PLUGIN_DIR . 'assets/js/frontend.js' ),
 			true
 		);
 

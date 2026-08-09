@@ -46,35 +46,152 @@
 	color: var(--mtfp-text);
 }
 
-.mtfp-page-title-row .page-title-action {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	padding: 6px 14px;
-	border-radius: var(--mtfp-radius-md);
-	font-weight: 600;
-	font-size: 13px;
-	cursor: pointer;
-	background: var(--mtfp-primary);
-	color: #ffffff;
-	border: 1px solid var(--mtfp-primary);
-	box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15);
-	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+.mtfp-page-title-row .page-title-action,
+body.wp-admin .mtfp-page-title-row .page-title-action,
+body.wp-core-ui .mtfp-page-title-row .page-title-action {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	padding: 6px 14px !important;
+	border-radius: var(--mtfp-radius-md) !important;
+	font-weight: 600 !important;
+	font-size: 13px !important;
+	cursor: pointer !important;
+	text-decoration: none !important;
+	height: auto !important;
+	line-height: 1.5 !important;
+	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, color 0.15s ease;
 }
 
-.mtfp-page-title-row .page-title-action:hover {
-	background: var(--mtfp-primary-hover);
-	border-color: var(--mtfp-primary-hover);
-}
-
-.mtfp-page-title-row .page-title-action:active {
-	transform: scale(0.98);
+.mtfp-page-title-row .page-title-action:active,
+body.wp-admin .mtfp-page-title-row .page-title-action:active,
+body.wp-core-ui .mtfp-page-title-row .page-title-action:active {
+	transform: scale(0.98) !important;
 }
 
 .mtfp-page-title-row .page-title-action span {
-	font-size: 14px;
-	width: 14px;
-	height: 14px;
+	font-size: 14px !important;
+	width: 14px !important;
+	height: 14px !important;
+}
+
+/* Specific Header Buttons Styling */
+/* 1. Add New Translation */
+.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row {
+	background: var(--mtfp-primary) !important;
+	border-color: var(--mtfp-primary) !important;
+	color: #ffffff !important;
+	margin-right: 8px !important;
+	box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15) !important;
+	outline: none !important;
+}
+.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible {
+	background: var(--mtfp-primary) !important;
+	border-color: var(--mtfp-primary) !important;
+	color: #ffffff !important;
+	outline: none !important;
+	box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15) !important;
+}
+.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active {
+	background: var(--mtfp-primary-hover) !important;
+	border-color: var(--mtfp-primary-hover) !important;
+	color: #ffffff !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+/* 2. Auto Translate */
+.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate {
+	background: #8b5cf6 !important;
+	border-color: #8b5cf6 !important;
+	color: #ffffff !important;
+	margin-right: 8px !important;
+	box-shadow: 0 2px 4px rgba(139, 92, 246, 0.15) !important;
+	outline: none !important;
+}
+.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible {
+	background: #8b5cf6 !important;
+	border-color: #8b5cf6 !important;
+	color: #ffffff !important;
+	outline: none !important;
+	box-shadow: 0 2px 4px rgba(139, 92, 246, 0.15) !important;
+}
+.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active {
+	background: #7c3aed !important;
+	border-color: #7c3aed !important;
+	color: #ffffff !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+/* 3. Scan & Import */
+.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal {
+	background: #0ea5e9 !important;
+	border-color: #0ea5e9 !important;
+	color: #ffffff !important;
+	margin-right: 8px !important;
+	box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15) !important;
+	outline: none !important;
+}
+.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible {
+	background: #0ea5e9 !important;
+	border-color: #0ea5e9 !important;
+	color: #ffffff !important;
+	outline: none !important;
+	box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15) !important;
+}
+.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
+.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
+body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
+body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active {
+	background: #0284c7 !important;
+	border-color: #0284c7 !important;
+	color: #ffffff !important;
+	outline: none !important;
+	box-shadow: none !important;
 }
 
 /* Unified SaaS-style Scan Group */
@@ -384,26 +501,44 @@
 	border-color: var(--mtfp-primary-hover) !important;
 }
 
-.button.mtfp-btn-primary:focus,
-.mtfp-page-title-row .page-title-action:focus,
-.mtfp-post-translate-btn:focus,
-.mtfp-term-translate-btn:focus {
-	background: var(--mtfp-primary-hover) !important;
-	border-color: var(--mtfp-primary-hover) !important;
-	color: #ffffff !important;
-	box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--mtfp-primary) !important;
+/* Completely disable focus outline and shadows for all buttons in our custom containers */
+.mtfp-page-title-row button:focus,
+.mtfp-page-title-row button:active,
+.mtfp-page-title-row button:focus-visible,
+#mtfp-ai-translation-helper button:focus,
+#mtfp-ai-translation-helper button:active,
+#mtfp-ai-translation-helper button:focus-visible,
+.term-translation-helper-wrap button:focus,
+.term-translation-helper-wrap button:active,
+.term-translation-helper-wrap button:focus-visible,
+body.wp-core-ui .button:focus,
+body.wp-core-ui .button-primary:focus,
+body.wp-core-ui .page-title-action:focus,
+body.wp-core-ui button:focus {
 	outline: none !important;
+	outline-offset: 0 !important;
+	box-shadow: none !important;
 }
 
-.button.mtfp-btn-primary:active,
-.mtfp-page-title-row .page-title-action:active,
-.mtfp-post-translate-btn:active,
-.mtfp-term-translate-btn:active {
+body.wp-core-ui .button:focus-visible,
+body.wp-core-ui .button-primary:focus-visible,
+body.wp-core-ui .page-title-action:focus-visible,
+body.wp-core-ui button:focus-visible {
+	outline: none !important;
+	outline-offset: 0 !important;
+	box-shadow: none !important;
+}
+
+body.wp-core-ui .button.mtfp-btn-primary:active,
+.mtfp-page-title-row button:active,
+body.wp-core-ui .button.mtfp-post-translate-btn:active,
+body.wp-core-ui .button.mtfp-term-translate-btn:active {
 	background: var(--mtfp-primary-hover) !important;
 	border-color: var(--mtfp-primary-hover) !important;
 	transform: scale(0.98) !important;
-	box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--mtfp-primary) !important;
 	outline: none !important;
+	box-shadow: none !important;
+	color: #ffffff !important;
 }
 
 .button.mtfp-btn-secondary {
@@ -429,24 +564,14 @@
 	color: var(--mtfp-text) !important;
 }
 
-.button.mtfp-btn-secondary:focus,
-.mtfp-post-retranslate-btn:focus,
-.mtfp-term-retranslate-btn:focus {
-	background: #f8fafc !important;
-	border-color: var(--mtfp-border-focus) !important;
-	color: var(--mtfp-text) !important;
-	box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #cbd5e1 !important;
-	outline: none !important;
-}
-
-.button.mtfp-btn-secondary:active,
-.mtfp-post-retranslate-btn:active,
-.mtfp-term-retranslate-btn:active {
+body.wp-core-ui .button.mtfp-btn-secondary:active,
+body.wp-core-ui .button.mtfp-post-retranslate-btn:active,
+body.wp-core-ui .button.mtfp-term-retranslate-btn:active {
 	background: #f1f5f9 !important;
 	border-color: #cbd5e1 !important;
 	color: var(--mtfp-text) !important;
-	box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #cbd5e1 !important;
 	outline: none !important;
+	box-shadow: none !important;
 }
 
 .full-width {
@@ -731,6 +856,11 @@
 
 .mtfp-modal-close:hover {
 	color: var(--mtfp-danger);
+}
+
+.mtfp-modal-close:focus {
+	outline: none !important;
+	box-shadow: none !important;
 }
 
 /* Sidebar Metabox & Term Translation Panel Styling */

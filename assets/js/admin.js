@@ -4,6 +4,11 @@
  * custom pagination, and AJAX-driven CRUD operations without page refreshes.
  */
 jQuery(document).ready(function ($) {
+	// Automatically blur buttons when clicked to prevent persistent focus styling
+	$(document).on('click', '.mtfp-page-title-row button, .mtfp-page-title-row .page-title-action, #mtfp-ai-translation-helper button, .term-translation-helper-wrap button, .button.mtfp-btn-primary, .button.mtfp-btn-secondary', function () {
+		$(this).trigger('blur');
+	});
+
 	const translationsList = $('#mtfp-translations-list');
 	const bulkActionSelect = $('#mtfp-bulk-action');
 	const applyBulkBtn = $('#mtfp-apply-bulk');
