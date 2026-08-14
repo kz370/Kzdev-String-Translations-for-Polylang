@@ -1,4 +1,4 @@
-=== Manual Translations for Polylang ===
+=== Kzdev String Translations for Polylang ===
 Contributors: kz370
 Tags: polylang, translation, localization, multilingual, ajax
 Requires at least: 5.0
@@ -7,15 +7,15 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-# Manual Translations for Polylang
+# Kzdev String Translations for Polylang
 
-Manually translate frontend strings on the fly with full Polylang support and CSV import/export.
+Manually translate frontend strings on the fly with Polylang language support and CSV import/export.
 
 ---
 
 ## 🚀 Overview
 
-**Manual Translations for Polylang** is a lightweight utility plugin designed to resolve the common issue of untranslatable frontend strings (e.g. dynamic cart widgets, checkout fragments, AJAX loaders, and JS-injected content). By hook-in to Polylang's active languages, it allows you to easily map original strings to custom translation values and injects them client-side in real-time.
+**Kzdev String Translations for Polylang** (formerly "Manual Translations for Polylang") is a lightweight utility plugin designed to resolve the common issue of untranslatable frontend strings (e.g. dynamic cart widgets, checkout fragments, AJAX loaders, and JS-injected content). By hook-in to Polylang's active languages, it allows you to easily map original strings to custom translation values and injects them client-side in real-time.
 
 ---
 

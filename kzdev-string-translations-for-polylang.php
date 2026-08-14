@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Plugin Name: Manual Translations for Polylang
- * Plugin URI: https://github.com/kz370/manual-translations-for-polylang
+ * Plugin Name: Kzdev String Translations for Polylang
+ * Plugin URI: https://github.com/kz370/Kzdev-String-Translations-for-Polylang
  * Description: Manually translate frontend strings using MutationObserver with Polylang language support.
  * Version: 1.0.0
- * Author: kz370
+ * Author: kzdev
  * Author URI: https://github.com/kz370
  * Requires at least: 5.0
  * Tested up to: 7.0
@@ -13,7 +13,7 @@
  * Requires Plugins: polylang
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: manual-translations-for-polylang
+ * Text Domain: kzdev-string-translations-for-polylang
  * Domain Path: /languages
  */
 

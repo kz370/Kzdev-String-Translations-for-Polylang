@@ -45,8 +45,6 @@ class Manual_Translations_Admin {
 		add_action( 'wp_ajax_mtfp_create_post_translation', array( $this, 'ajax_create_post_translation' ) );
 		add_action( 'wp_ajax_mtfp_create_term_translation', array( $this, 'ajax_create_term_translation' ) );
 
-		// Inject focus reset inline stylesheet in the admin head to bypass style caching issues
-		add_action( 'admin_head', array( $this, 'inject_admin_focus_reset' ) );
 	}
 
 	/**
@@ -99,8 +97,8 @@ class Manual_Translations_Admin {
 
 		add_submenu_page(
 			$parent_slug,
-			__( 'Manual Translations', 'manual-translations-for-polylang' ),
-			__( 'Manual Translations', 'manual-translations-for-polylang' ),
+			__( 'Manual Translations', 'kzdev-string-translations-for-polylang' ),
+			__( 'Manual Translations', 'kzdev-string-translations-for-polylang' ),
 			'manage_options',
 			'manual-translations',
 			array( $this, 'render_admin_page' )
@@ -148,13 +146,13 @@ class Manual_Translations_Admin {
 				'provider' => isset( $ai_settings['provider'] ) ? $ai_settings['provider'] : 'none',
 			),
 			'i18n'       => array(
-				'saving'       => __( 'Saving...', 'manual-translations-for-polylang' ),
-				'saved'        => __( 'Saved', 'manual-translations-for-polylang' ),
-				'error'        => __( 'An error occurred.', 'manual-translations-for-polylang' ),
-				'confirmDel'   => __( 'Are you sure you want to delete this translation?', 'manual-translations-for-polylang' ),
-				'confirmBulk'  => __( 'Are you sure you want to delete the selected translations?', 'manual-translations-for-polylang' ),
-				'noSelection'  => __( 'No items selected.', 'manual-translations-for-polylang' ),
-				'emptySource'  => __( 'Source string cannot be empty.', 'manual-translations-for-polylang' ),
+				'saving'       => __( 'Saving...', 'kzdev-string-translations-for-polylang' ),
+				'saved'        => __( 'Saved', 'kzdev-string-translations-for-polylang' ),
+				'error'        => __( 'An error occurred.', 'kzdev-string-translations-for-polylang' ),
+				'confirmDel'   => __( 'Are you sure you want to delete this translation?', 'kzdev-string-translations-for-polylang' ),
+				'confirmBulk'  => __( 'Are you sure you want to delete the selected translations?', 'kzdev-string-translations-for-polylang' ),
+				'noSelection'  => __( 'No items selected.', 'kzdev-string-translations-for-polylang' ),
+				'emptySource'  => __( 'Source string cannot be empty.', 'kzdev-string-translations-for-polylang' ),
 			),
 		);
 
@@ -227,13 +225,13 @@ class Manual_Translations_Admin {
 	public function ajax_save_translation() {
 		// Verify capability and nonce
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
-		$source = isset( $_POST['source'] ) ? trim( wp_unslash( $_POST['source'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$source = isset( $_POST['source'] ) ? sanitize_text_field( wp_unslash( $_POST['source'] ) ) : '';
 		if ( '' === $source ) {
-			wp_send_json_error( array( 'message' => __( 'Source string cannot be empty.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Source string cannot be empty.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		$hash = md5( $source );
@@ -260,7 +258,7 @@ class Manual_Translations_Admin {
 		update_option( 'manual_translations_strings', $data );
 
 		wp_send_json_success( array(
-			'message' => __( 'Translation saved successfully.', 'manual-translations-for-polylang' ),
+			'message' => __( 'Translation saved successfully.', 'kzdev-string-translations-for-polylang' ),
 			'hash'    => $hash,
 			'row'     => $data[ $hash ],
 		) );
@@ -272,13 +270,13 @@ class Manual_Translations_Admin {
 	public function ajax_delete_translation() {
 		// Verify capability and nonce
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
 		$hash = isset( $_POST['hash'] ) ? sanitize_text_field( wp_unslash( $_POST['hash'] ) ) : '';
 		if ( empty( $hash ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid request parameters.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid request parameters.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		$data = $this->get_translations_data();
@@ -286,10 +284,10 @@ class Manual_Translations_Admin {
 		if ( isset( $data[ $hash ] ) ) {
 			unset( $data[ $hash ] );
 			update_option( 'manual_translations_strings', $data );
-			wp_send_json_success( array( 'message' => __( 'Translation deleted successfully.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Translation deleted successfully.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
-		wp_send_json_error( array( 'message' => __( 'Translation not found.', 'manual-translations-for-polylang' ) ) );
+		wp_send_json_error( array( 'message' => __( 'Translation not found.', 'kzdev-string-translations-for-polylang' ) ) );
 	}
 
 	/**
@@ -298,13 +296,13 @@ class Manual_Translations_Admin {
 	public function ajax_bulk_delete() {
 		// Verify capability and nonce
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
 		$hashes = isset( $_POST['hashes'] ) ? map_deep( wp_unslash( $_POST['hashes'] ), 'sanitize_text_field' ) : array();
 		if ( empty( $hashes ) || ! is_array( $hashes ) ) {
-			wp_send_json_error( array( 'message' => __( 'No items selected.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'No items selected.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		$data = $this->get_translations_data();
@@ -320,10 +318,10 @@ class Manual_Translations_Admin {
 		if ( $count > 0 ) {
 			update_option( 'manual_translations_strings', $data );
 			/* translators: %d: number of deleted translations. */
-			wp_send_json_success( array( 'message' => sprintf( _n( 'Successfully deleted %d translation.', 'Successfully deleted %d translations.', $count, 'manual-translations-for-polylang' ), $count ) ) );
+			wp_send_json_success( array( 'message' => sprintf( _n( 'Successfully deleted %d translation.', 'Successfully deleted %d translations.', $count, 'kzdev-string-translations-for-polylang' ), $count ) ) );
 		}
 
-		wp_send_json_error( array( 'message' => __( 'No translations were deleted.', 'manual-translations-for-polylang' ) ) );
+		wp_send_json_error( array( 'message' => __( 'No translations were deleted.', 'kzdev-string-translations-for-polylang' ) ) );
 	}
 
 	/**
@@ -331,7 +329,7 @@ class Manual_Translations_Admin {
 	 */
 	public function ajax_scan_theme() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
@@ -453,7 +451,7 @@ class Manual_Translations_Admin {
 				foreach ( $plugins as $file => $data ) {
 					$dir = dirname( $file );
 					if ( '.' !== $dir && '' !== $dir ) {
-						if ( strpos( $file, 'manual-translations-for-polylang' ) === false ) {
+						if ( strpos( $file, 'kzdev-string-translations-for-polylang' ) === false ) {
 							$dirs[] = WP_PLUGIN_DIR . '/' . $dir;
 						}
 					}
@@ -470,7 +468,7 @@ class Manual_Translations_Admin {
 				foreach ( $plugins as $file => $data ) {
 					$dir = dirname( $file );
 					if ( '.' !== $dir && '' !== $dir ) {
-						if ( strpos( $file, 'manual-translations-for-polylang' ) === false ) {
+						if ( strpos( $file, 'kzdev-string-translations-for-polylang' ) === false ) {
 							$dirs[] = WP_PLUGIN_DIR . '/' . $dir;
 						}
 					}
@@ -483,10 +481,10 @@ class Manual_Translations_Admin {
 				if ( is_dir( $plugin_dir ) ) {
 					$dirs[] = $plugin_dir;
 				} else {
-					wp_send_json_error( array( 'message' => __( 'Plugin directory not found.', 'manual-translations-for-polylang' ) ) );
+					wp_send_json_error( array( 'message' => __( 'Plugin directory not found.', 'kzdev-string-translations-for-polylang' ) ) );
 				}
 			} else {
-				wp_send_json_error( array( 'message' => __( 'Invalid scan target parameter.', 'manual-translations-for-polylang' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid scan target parameter.', 'kzdev-string-translations-for-polylang' ) ) );
 			}
 
 			$dirs = array_unique( $dirs );
@@ -570,13 +568,13 @@ class Manual_Translations_Admin {
 	 */
 	public function ajax_import_scanned() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
 		$strings = isset( $_POST['strings'] ) ? map_deep( wp_unslash( $_POST['strings'] ), 'sanitize_text_field' ) : array();
 		if ( empty( $strings ) || ! is_array( $strings ) ) {
-			wp_send_json_error( array( 'message' => __( 'No strings selected.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'No strings selected.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		$languages = $this->get_active_languages();
@@ -608,12 +606,12 @@ class Manual_Translations_Admin {
 			update_option( 'manual_translations_strings', $data );
 			wp_send_json_success( array(
 				/* translators: %d: number of imported strings. */
-				'message'  => sprintf( _n( 'Successfully imported %d string.', 'Successfully imported %d strings.', count( $imported ), 'manual-translations-for-polylang' ), count( $imported ) ),
+				'message'  => sprintf( _n( 'Successfully imported %d string.', 'Successfully imported %d strings.', count( $imported ), 'kzdev-string-translations-for-polylang' ), count( $imported ) ),
 				'imported' => $imported,
 			) );
 		}
 
-		wp_send_json_error( array( 'message' => __( 'No new strings were imported.', 'manual-translations-for-polylang' ) ) );
+		wp_send_json_error( array( 'message' => __( 'No new strings were imported.', 'kzdev-string-translations-for-polylang' ) ) );
 	}
 
 	/**
@@ -621,7 +619,7 @@ class Manual_Translations_Admin {
 	 */
 	public function ajax_save_ai_settings() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
@@ -640,7 +638,7 @@ class Manual_Translations_Admin {
 		update_option( 'manual_translations_ai_settings', $settings );
 
 		wp_send_json_success( array(
-			'message'  => __( 'AI settings saved successfully.', 'manual-translations-for-polylang' ),
+			'message'  => __( 'AI settings saved successfully.', 'kzdev-string-translations-for-polylang' ),
 			'provider' => $provider,
 		) );
 	}
@@ -661,7 +659,7 @@ class Manual_Translations_Admin {
 		$provider    = $ai_settings['provider'] ?? 'none';
 
 		if ( 'openai' !== $provider ) {
-			return new WP_Error( 'openai_inactive', __( 'OpenAI provider is not active.', 'manual-translations-for-polylang' ) );
+			return new WP_Error( 'openai_inactive', __( 'OpenAI provider is not active.', 'kzdev-string-translations-for-polylang' ) );
 		}
 
 		$api_url = ! empty( $ai_settings['openai_url'] ) ? esc_url_raw( $ai_settings['openai_url'] ) : 'https://api.openai.com/v1/chat/completions';
@@ -716,7 +714,7 @@ class Manual_Translations_Admin {
 		if ( 200 !== $response_code ) {
 			$error_data = json_decode( $response_body, true );
 			/* translators: %d: HTTP status code returned by the translation API. */
-			$error_message = $error_data['error']['message'] ?? sprintf( __( 'API returned HTTP %d', 'manual-translations-for-polylang' ), $response_code );
+			$error_message = $error_data['error']['message'] ?? sprintf( __( 'API returned HTTP %d', 'kzdev-string-translations-for-polylang' ), $response_code );
 			return new WP_Error( 'api_error', $error_message );
 		}
 
@@ -737,15 +735,15 @@ class Manual_Translations_Admin {
 	 */
 	public function ajax_ai_translate() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
-		$source      = isset( $_POST['source'] ) ? trim( wp_unslash( $_POST['source'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$source      = isset( $_POST['source'] ) ? sanitize_text_field( wp_unslash( $_POST['source'] ) ) : '';
 		$target_lang = isset( $_POST['target_lang'] ) ? sanitize_text_field( wp_unslash( $_POST['target_lang'] ) ) : '';
 
 		if ( '' === $source || '' === $target_lang ) {
-			wp_send_json_error( array( 'message' => __( 'Missing source string or target language.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Missing source string or target language.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		$translation = $this->translate_via_openai( $source, $target_lang );
@@ -781,7 +779,7 @@ class Manual_Translations_Admin {
 		foreach ( $post_types as $post_type ) {
 			add_meta_box(
 				'mtfp-ai-translation-helper',
-				__( 'AI Translation Helper', 'manual-translations-for-polylang' ),
+				__( 'AI Translation Helper', 'kzdev-string-translations-for-polylang' ),
 				array( $this, 'render_post_translation_metabox' ),
 				$post_type,
 				'side',
@@ -801,7 +799,7 @@ class Manual_Translations_Admin {
 		$translations = function_exists( 'pll_get_post_translations' ) ? pll_get_post_translations( $post->ID ) : array();
 
 		if ( empty( $languages ) ) {
-			echo '<p>' . esc_html__( 'Please configure Polylang languages first.', 'manual-translations-for-polylang' ) . '</p>';
+			echo '<p>' . esc_html__( 'Please configure Polylang languages first.', 'kzdev-string-translations-for-polylang' ) . '</p>';
 			return;
 		}
 
@@ -809,8 +807,8 @@ class Manual_Translations_Admin {
 		echo '<table class="mtfp-translation-helper-table" style="width: 100%; border-collapse: collapse;">';
 		echo '<thead>';
 		echo '<tr style="border-bottom: 1px solid #eee;">';
-		echo '<th style="text-align: left; padding: 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase;">' . esc_html__( 'Language', 'manual-translations-for-polylang' ) . '</th>';
-		echo '<th style="text-align: right; padding: 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase;">' . esc_html__( 'Actions', 'manual-translations-for-polylang' ) . '</th>';
+		echo '<th style="text-align: left; padding: 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase;">' . esc_html__( 'Language', 'kzdev-string-translations-for-polylang' ) . '</th>';
+		echo '<th style="text-align: right; padding: 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase;">' . esc_html__( 'Actions', 'kzdev-string-translations-for-polylang' ) . '</th>';
 		echo '</tr>';
 		echo '</thead>';
 		echo '<tbody>';
@@ -827,18 +825,18 @@ class Manual_Translations_Admin {
 			echo '<td style="padding: 8px 0; vertical-align: middle; font-size: 13px;">';
 			echo esc_html( $lang['name'] );
 			if ( $has_translation ) {
-				echo ' <span class="dashicons dashicons-yes-alt" style="color: #10b981; font-size: 16px; width: 16px; height: 16px; vertical-align: middle;" title="' . esc_attr__( 'Translated', 'manual-translations-for-polylang' ) . '"></span>';
+				echo ' <span class="dashicons dashicons-yes-alt" style="color: #10b981; font-size: 16px; width: 16px; height: 16px; vertical-align: middle;" title="' . esc_attr__( 'Translated', 'kzdev-string-translations-for-polylang' ) . '"></span>';
 			} else {
-				echo ' <span class="dashicons dashicons-warning" style="color: #64748b; font-size: 16px; width: 16px; height: 16px; vertical-align: middle;" title="' . esc_attr__( 'Not Translated', 'manual-translations-for-polylang' ) . '"></span>';
+				echo ' <span class="dashicons dashicons-warning" style="color: #64748b; font-size: 16px; width: 16px; height: 16px; vertical-align: middle;" title="' . esc_attr__( 'Not Translated', 'kzdev-string-translations-for-polylang' ) . '"></span>';
 			}
 			echo '</td>';
 			echo '<td style="padding: 8px 0; text-align: right; vertical-align: middle;">';
 			if ( $has_translation ) {
 				$edit_url = get_edit_post_link( $translated_post_id );
-				echo '<a href="' . esc_url( $edit_url ) . '" class="button button-small" style="margin-right: 4px;" title="' . esc_attr__( 'Edit Translation', 'manual-translations-for-polylang' ) . '"><span class="dashicons dashicons-edit" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span></a>';
-				echo '<button type="button" class="button button-small mtfp-post-retranslate-btn" data-lang="' . esc_attr( $lang['slug'] ) . '" data-post-id="' . esc_attr( $translated_post_id ) . '" title="' . esc_attr__( 'Re-translate with AI', 'manual-translations-for-polylang' ) . '"><span class="dashicons dashicons-admin-customizer" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span></button>';
+				echo '<a href="' . esc_url( $edit_url ) . '" class="button button-small" style="margin-right: 4px;" title="' . esc_attr__( 'Edit Translation', 'kzdev-string-translations-for-polylang' ) . '"><span class="dashicons dashicons-edit" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span></a>';
+				echo '<button type="button" class="button button-small mtfp-post-retranslate-btn" data-lang="' . esc_attr( $lang['slug'] ) . '" data-post-id="' . esc_attr( $translated_post_id ) . '" title="' . esc_attr__( 'Re-translate with AI', 'kzdev-string-translations-for-polylang' ) . '"><span class="dashicons dashicons-admin-customizer" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span></button>';
 			} else {
-				echo '<button type="button" class="button button-small button-primary mtfp-post-translate-btn" data-lang="' . esc_attr( $lang['slug'] ) . '" title="' . esc_attr__( 'Translate', 'manual-translations-for-polylang' ) . '">' . esc_html__( 'Translate', 'manual-translations-for-polylang' ) . '</button>';
+				echo '<button type="button" class="button button-small button-primary mtfp-post-translate-btn" data-lang="' . esc_attr( $lang['slug'] ) . '" title="' . esc_attr__( 'Translate', 'kzdev-string-translations-for-polylang' ) . '">' . esc_html__( 'Translate', 'kzdev-string-translations-for-polylang' ) . '</button>';
 			}
 			echo '</td>';
 			echo '</tr>';
@@ -865,14 +863,14 @@ class Manual_Translations_Admin {
 		}
 		?>
 		<tr class="form-field term-translation-helper-wrap">
-			<th scope="row" valign="top"><label><?php esc_html_e( 'AI Translation Helper', 'manual-translations-for-polylang' ); ?></label></th>
+			<th scope="row" valign="top"><label><?php esc_html_e( 'AI Translation Helper', 'kzdev-string-translations-for-polylang' ); ?></label></th>
 			<td>
 				<div class="mtfp-term-translation-container" style="max-width: 500px; background: #fff; border: 1px solid #ccd0d4; padding: 12px; border-radius: 4px;">
 					<table style="width: 100%; border-collapse: collapse;">
 						<thead>
 							<tr style="border-bottom: 1px solid #eee;">
-								<th style="text-align: left; padding: 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase;"><?php esc_html_e( 'Language', 'manual-translations-for-polylang' ); ?></th>
-								<th style="text-align: right; padding: 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase;"><?php esc_html_e( 'Actions', 'manual-translations-for-polylang' ); ?></th>
+								<th style="text-align: left; padding: 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase;"><?php esc_html_e( 'Language', 'kzdev-string-translations-for-polylang' ); ?></th>
+								<th style="text-align: right; padding: 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase;"><?php esc_html_e( 'Actions', 'kzdev-string-translations-for-polylang' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -889,18 +887,18 @@ class Manual_Translations_Admin {
 									<td style="padding: 8px 0; vertical-align: middle; font-size: 13px;">
 										<?php echo esc_html( $lang['name'] ); ?>
 										<?php if ( $has_translation ) : ?>
-											<span class="dashicons dashicons-yes-alt" style="color: #10b981; font-size: 16px; width: 16px; height: 16px; vertical-align: middle;" title="<?php esc_attr_e( 'Translated', 'manual-translations-for-polylang' ); ?>"></span>
+											<span class="dashicons dashicons-yes-alt" style="color: #10b981; font-size: 16px; width: 16px; height: 16px; vertical-align: middle;" title="<?php esc_attr_e( 'Translated', 'kzdev-string-translations-for-polylang' ); ?>"></span>
 										<?php else : ?>
-											<span class="dashicons dashicons-warning" style="color: #64748b; font-size: 16px; width: 16px; height: 16px; vertical-align: middle;" title="<?php esc_attr_e( 'Not Translated', 'manual-translations-for-polylang' ); ?>"></span>
+											<span class="dashicons dashicons-warning" style="color: #64748b; font-size: 16px; width: 16px; height: 16px; vertical-align: middle;" title="<?php esc_attr_e( 'Not Translated', 'kzdev-string-translations-for-polylang' ); ?>"></span>
 										<?php endif; ?>
 									</td>
 									<td style="padding: 8px 0; text-align: right; vertical-align: middle;">
 										<?php if ( $has_translation ) : ?>
 											<?php $edit_url = get_edit_term_link( $translated_term_id, $taxonomy ); ?>
-											<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small" style="margin-right: 4px;" title="<?php esc_attr_e( 'Edit Translation', 'manual-translations-for-polylang' ); ?>"><span class="dashicons dashicons-edit" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span></a>
-											<button type="button" class="button button-small mtfp-term-retranslate-btn" data-lang="<?php echo esc_attr( $lang['slug'] ); ?>" data-term-id="<?php echo esc_attr( $translated_term_id ); ?>" title="<?php esc_attr_e( 'Re-translate with AI', 'manual-translations-for-polylang' ); ?>"><span class="dashicons dashicons-admin-customizer" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span></button>
+											<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small" style="margin-right: 4px;" title="<?php esc_attr_e( 'Edit Translation', 'kzdev-string-translations-for-polylang' ); ?>"><span class="dashicons dashicons-edit" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span></a>
+											<button type="button" class="button button-small mtfp-term-retranslate-btn" data-lang="<?php echo esc_attr( $lang['slug'] ); ?>" data-term-id="<?php echo esc_attr( $translated_term_id ); ?>" title="<?php esc_attr_e( 'Re-translate with AI', 'kzdev-string-translations-for-polylang' ); ?>"><span class="dashicons dashicons-admin-customizer" style="font-size: 14px; width: 14px; height: 14px; margin-top: 3px;"></span></button>
 										<?php else : ?>
-											<button type="button" class="button button-small button-primary mtfp-term-translate-btn" data-lang="<?php echo esc_attr( $lang['slug'] ); ?>" title="<?php esc_attr_e( 'Translate', 'manual-translations-for-polylang' ); ?>"><?php esc_html_e( 'Translate', 'manual-translations-for-polylang' ); ?></button>
+											<button type="button" class="button button-small button-primary mtfp-term-translate-btn" data-lang="<?php echo esc_attr( $lang['slug'] ); ?>" title="<?php esc_attr_e( 'Translate', 'kzdev-string-translations-for-polylang' ); ?>"><?php esc_html_e( 'Translate', 'kzdev-string-translations-for-polylang' ); ?></button>
 										<?php endif; ?>
 									</td>
 								</tr>
@@ -910,7 +908,7 @@ class Manual_Translations_Admin {
 						</tbody>
 					</table>
 				</div>
-				<p class="description"><?php esc_html_e( 'Create or update translations using the active AI provider.', 'manual-translations-for-polylang' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Create or update translations using the active AI provider.', 'kzdev-string-translations-for-polylang' ); ?></p>
 			</td>
 		</tr>
 		<?php
@@ -921,7 +919,7 @@ class Manual_Translations_Admin {
 	 */
 	public function ajax_create_post_translation() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
@@ -930,11 +928,11 @@ class Manual_Translations_Admin {
 
 		$source_post = get_post( $source_post_id );
 		if ( ! $source_post ) {
-			wp_send_json_error( array( 'message' => __( 'Source post not found.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Source post not found.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		if ( empty( $target_lang ) ) {
-			wp_send_json_error( array( 'message' => __( 'Missing target language.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Missing target language.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		$ai_settings = get_option( 'manual_translations_ai_settings', array( 'provider' => 'none' ) );
@@ -950,14 +948,14 @@ class Manual_Translations_Admin {
 			$translated_title = $this->translate_via_openai( $source_post->post_title, $target_lang );
 			if ( is_wp_error( $translated_title ) ) {
 				/* translators: %s: error message returned by the translation provider. */
-				wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate title: %s', 'manual-translations-for-polylang' ), $translated_title->get_error_message() ) ) );
+				wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate title: %s', 'kzdev-string-translations-for-polylang' ), $translated_title->get_error_message() ) ) );
 			}
 
 			if ( ! empty( $source_post->post_content ) ) {
 				$translated_content = $this->translate_via_openai( $source_post->post_content, $target_lang );
 				if ( is_wp_error( $translated_content ) ) {
 					/* translators: %s: error message returned by the translation provider. */
-					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate content: %s', 'manual-translations-for-polylang' ), $translated_content->get_error_message() ) ) );
+					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate content: %s', 'kzdev-string-translations-for-polylang' ), $translated_content->get_error_message() ) ) );
 				}
 			}
 
@@ -965,7 +963,7 @@ class Manual_Translations_Admin {
 				$translated_excerpt = $this->translate_via_openai( $source_post->post_excerpt, $target_lang );
 				if ( is_wp_error( $translated_excerpt ) ) {
 					/* translators: %s: error message returned by the translation provider. */
-					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate excerpt: %s', 'manual-translations-for-polylang' ), $translated_excerpt->get_error_message() ) ) );
+					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate excerpt: %s', 'kzdev-string-translations-for-polylang' ), $translated_excerpt->get_error_message() ) ) );
 				}
 			}
 		}
@@ -1024,7 +1022,7 @@ class Manual_Translations_Admin {
 		}
 
 		wp_send_json_success( array(
-			'message'  => __( 'Translation processed successfully.', 'manual-translations-for-polylang' ),
+			'message'  => __( 'Translation processed successfully.', 'kzdev-string-translations-for-polylang' ),
 			'post_id'  => $target_post_id,
 			'edit_url' => get_edit_post_link( $target_post_id, 'raw' ),
 		) );
@@ -1035,7 +1033,7 @@ class Manual_Translations_Admin {
 	 */
 	public function ajax_create_term_translation() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 		check_ajax_referer( 'mtfp_admin_nonce', 'nonce' );
 
@@ -1044,11 +1042,11 @@ class Manual_Translations_Admin {
 
 		$source_term = get_term( $source_term_id );
 		if ( ! $source_term || is_wp_error( $source_term ) ) {
-			wp_send_json_error( array( 'message' => __( 'Source term not found.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Source term not found.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		if ( empty( $target_lang ) ) {
-			wp_send_json_error( array( 'message' => __( 'Missing target language.', 'manual-translations-for-polylang' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Missing target language.', 'kzdev-string-translations-for-polylang' ) ) );
 		}
 
 		$ai_settings = get_option( 'manual_translations_ai_settings', array( 'provider' => 'none' ) );
@@ -1063,14 +1061,14 @@ class Manual_Translations_Admin {
 			$translated_name = $this->translate_via_openai( $source_term->name, $target_lang );
 			if ( is_wp_error( $translated_name ) ) {
 				/* translators: %s: error message returned by the translation provider. */
-				wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate name: %s', 'manual-translations-for-polylang' ), $translated_name->get_error_message() ) ) );
+				wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate name: %s', 'kzdev-string-translations-for-polylang' ), $translated_name->get_error_message() ) ) );
 			}
 
 			if ( ! empty( $source_term->description ) ) {
 				$translated_description = $this->translate_via_openai( $source_term->description, $target_lang );
 				if ( is_wp_error( $translated_description ) ) {
 					/* translators: %s: error message returned by the translation provider. */
-					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate description: %s', 'manual-translations-for-polylang' ), $translated_description->get_error_message() ) ) );
+					wp_send_json_error( array( 'message' => sprintf( __( 'Failed to translate description: %s', 'kzdev-string-translations-for-polylang' ), $translated_description->get_error_message() ) ) );
 				}
 			}
 		}
@@ -1127,7 +1125,7 @@ class Manual_Translations_Admin {
 		}
 
 		wp_send_json_success( array(
-			'message'  => __( 'Term translation processed successfully.', 'manual-translations-for-polylang' ),
+			'message'  => __( 'Term translation processed successfully.', 'kzdev-string-translations-for-polylang' ),
 			'term_id'  => $target_term_id,
 			'edit_url' => get_edit_term_link( $target_term_id, $source_term->taxonomy, 'raw' ),
 		) );
@@ -1142,7 +1140,7 @@ class Manual_Translations_Admin {
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permission denied.', 'manual-translations-for-polylang' ) );
+			wp_die( esc_html__( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) );
 		}
 
 		check_admin_referer( 'mtfp_csv_export', 'mtfp_export_nonce' );
@@ -1161,7 +1159,7 @@ class Manual_Translations_Admin {
 
 		$output = fopen( 'php://output', 'w' );
 		if ( ! $output ) {
-			wp_die( esc_html__( 'Failed to generate CSV output.', 'manual-translations-for-polylang' ) );
+			wp_die( esc_html__( 'Failed to generate CSV output.', 'kzdev-string-translations-for-polylang' ) );
 		}
 
 		// CSV Column Headers: Source String, Language 1, Language 2...
@@ -1199,7 +1197,7 @@ class Manual_Translations_Admin {
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permission denied.', 'manual-translations-for-polylang' ) );
+			wp_die( esc_html__( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) );
 		}
 
 		check_admin_referer( 'mtfp_csv_import', 'mtfp_import_nonce' );
@@ -1209,7 +1207,7 @@ class Manual_Translations_Admin {
 			add_settings_error(
 				'mtfp_messages',
 				'mtfp_import_error',
-				__( 'Please select a valid CSV file to import.', 'manual-translations-for-polylang' ),
+				__( 'Please select a valid CSV file to import.', 'kzdev-string-translations-for-polylang' ),
 				'error'
 			);
 			return;
@@ -1220,7 +1218,7 @@ class Manual_Translations_Admin {
 			add_settings_error(
 				'mtfp_messages',
 				'mtfp_import_error',
-				__( 'Invalid file upload source.', 'manual-translations-for-polylang' ),
+				__( 'Invalid file upload source.', 'kzdev-string-translations-for-polylang' ),
 				'error'
 			);
 			return;
@@ -1231,7 +1229,7 @@ class Manual_Translations_Admin {
 			add_settings_error(
 				'mtfp_messages',
 				'mtfp_import_error',
-				__( 'Unable to open imported file.', 'manual-translations-for-polylang' ),
+				__( 'Unable to open imported file.', 'kzdev-string-translations-for-polylang' ),
 				'error'
 			);
 			return;
@@ -1247,7 +1245,7 @@ class Manual_Translations_Admin {
 			add_settings_error(
 				'mtfp_messages',
 				'mtfp_import_error',
-				__( 'Invalid CSV structure. The first column must be named "Source String".', 'manual-translations-for-polylang' ),
+				__( 'Invalid CSV structure. The first column must be named "Source String".', 'kzdev-string-translations-for-polylang' ),
 				'error'
 			);
 			return;
@@ -1300,7 +1298,7 @@ class Manual_Translations_Admin {
 			'mtfp_messages',
 			'mtfp_import_success',
 			/* translators: %d: number of imported translation strings. */
-			sprintf( _n( 'Successfully imported %d translation string.', 'Successfully imported %d translation strings.', $count, 'manual-translations-for-polylang' ), $count ),
+			sprintf( _n( 'Successfully imported %d translation string.', 'Successfully imported %d translation strings.', $count, 'kzdev-string-translations-for-polylang' ), $count ),
 			'success'
 		);
 	}
@@ -1310,7 +1308,7 @@ class Manual_Translations_Admin {
 	 */
 	public function render_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Permission denied.', 'manual-translations-for-polylang' ) );
+			wp_die( esc_html__( 'Permission denied.', 'kzdev-string-translations-for-polylang' ) );
 		}
 
 		$languages = $this->get_active_languages();
@@ -1322,22 +1320,22 @@ class Manual_Translations_Admin {
 		<div class="wrap mtfp-admin-wrap">
 			<!-- Header Title Row -->
 			<div class="mtfp-page-title-row" style="flex-wrap: wrap;">
-				<h1 class="wp-heading-inline"><?php esc_html_e( 'Manual Translations', 'manual-translations-for-polylang' ); ?></h1>
+				<h1 class="wp-heading-inline"><?php esc_html_e( 'Manual Translations', 'kzdev-string-translations-for-polylang' ); ?></h1>
 				<button type="button" class="page-title-action mtfp-trigger-add-row">
 					<span class="dashicons dashicons-plus"></span>
-					<?php esc_html_e( 'Add New Translation', 'manual-translations-for-polylang' ); ?>
+					<?php esc_html_e( 'Add New Translation', 'kzdev-string-translations-for-polylang' ); ?>
 				</button>
 				<?php
 				$ai_settings = get_option( 'manual_translations_ai_settings', array( 'provider' => 'none' ) );
 				?>
 				<button type="button" class="page-title-action mtfp-trigger-auto-translate" style="<?php echo 'none' === $ai_settings['provider'] ? 'display: none;' : ''; ?>">
 					<span class="dashicons dashicons-admin-customizer"></span>
-					<?php esc_html_e( 'Auto Translate', 'manual-translations-for-polylang' ); ?>
+					<?php esc_html_e( 'Auto Translate', 'kzdev-string-translations-for-polylang' ); ?>
 				</button>
 
 				<button type="button" class="page-title-action mtfp-trigger-scan-modal">
 					<span class="dashicons dashicons-search"></span>
-					<?php esc_html_e( 'Scan & Import', 'manual-translations-for-polylang' ); ?>
+					<?php esc_html_e( 'Scan & Import', 'kzdev-string-translations-for-polylang' ); ?>
 				</button>
 			</div>
 
@@ -1351,16 +1349,16 @@ class Manual_Translations_Admin {
 					<!-- Bulk Actions & Search -->
 					<div class="mtfp-bulk-action-group">
 						<select id="mtfp-bulk-action" class="mtfp-select">
-							<option value=""><?php esc_html_e( 'Bulk Actions', 'manual-translations-for-polylang' ); ?></option>
-							<option value="delete"><?php esc_html_e( 'Delete Selected', 'manual-translations-for-polylang' ); ?></option>
+							<option value=""><?php esc_html_e( 'Bulk Actions', 'kzdev-string-translations-for-polylang' ); ?></option>
+							<option value="delete"><?php esc_html_e( 'Delete Selected', 'kzdev-string-translations-for-polylang' ); ?></option>
 						</select>
-						<button id="mtfp-apply-bulk" class="button mtfp-btn-secondary" type="button"><?php esc_html_e( 'Apply', 'manual-translations-for-polylang' ); ?></button>
+						<button id="mtfp-apply-bulk" class="button mtfp-btn-secondary" type="button"><?php esc_html_e( 'Apply', 'kzdev-string-translations-for-polylang' ); ?></button>
 					</div>
 
 					<!-- Per Page Selector & Live Search -->
 					<div class="mtfp-filter-group" style="display: flex; gap: 16px; align-items: center;">
 						<div class="mtfp-per-page-container" style="display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--mtfp-text-muted);">
-							<label for="mtfp-per-page"><?php esc_html_e( 'Show', 'manual-translations-for-polylang' ); ?></label>
+							<label for="mtfp-per-page"><?php esc_html_e( 'Show', 'kzdev-string-translations-for-polylang' ); ?></label>
 							<select id="mtfp-per-page" class="mtfp-select">
 								<option value="10">10</option>
 								<option value="20" selected>20</option>
@@ -1369,11 +1367,11 @@ class Manual_Translations_Admin {
 								<option value="200">200</option>
 								<option value="500">500</option>
 							</select>
-							<span><?php esc_html_e( 'per page', 'manual-translations-for-polylang' ); ?></span>
+							<span><?php esc_html_e( 'per page', 'kzdev-string-translations-for-polylang' ); ?></span>
 						</div>
 
 						<div class="mtfp-search-container">
-							<input type="search" id="mtfp-search" class="mtfp-input" placeholder="<?php esc_attr_e( 'Search strings...', 'manual-translations-for-polylang' ); ?>" />
+							<input type="search" id="mtfp-search" class="mtfp-input" placeholder="<?php esc_attr_e( 'Search strings...', 'kzdev-string-translations-for-polylang' ); ?>" />
 						</div>
 					</div>
 				</div>
@@ -1391,11 +1389,11 @@ class Manual_Translations_Admin {
 									<th class="mtfp-col-cb">
 										<input type="checkbox" id="mtfp-select-all" />
 									</th>
-									<th class="mtfp-col-source"><?php esc_html_e( 'Source String', 'manual-translations-for-polylang' ); ?></th>
+									<th class="mtfp-col-source"><?php esc_html_e( 'Source String', 'kzdev-string-translations-for-polylang' ); ?></th>
 									<?php foreach ( $languages as $lang ) : ?>
 										<th><?php echo esc_html( $lang['name'] ); ?> <span class="mtfp-lang-code">(<?php echo esc_html( $lang['slug'] ); ?>)</span></th>
 									<?php endforeach; ?>
-									<th class="mtfp-col-actions"><?php esc_html_e( 'Actions', 'manual-translations-for-polylang' ); ?></th>
+									<th class="mtfp-col-actions"><?php esc_html_e( 'Actions', 'kzdev-string-translations-for-polylang' ); ?></th>
 								</tr>
 							</thead>
 							<tbody id="mtfp-translations-list">
@@ -1409,7 +1407,7 @@ class Manual_Translations_Admin {
 						<div class="mtfp-footer-actions">
 							<button type="submit" class="button mtfp-btn-secondary" id="mtfp-export-selected">
 								<span class="dashicons dashicons-download"></span>
-								<?php esc_html_e( 'Export Selected to CSV', 'manual-translations-for-polylang' ); ?>
+								<?php esc_html_e( 'Export Selected to CSV', 'kzdev-string-translations-for-polylang' ); ?>
 							</button>
 						</div>
 						<!-- Dynamic table info and pagination links -->
@@ -1425,73 +1423,73 @@ class Manual_Translations_Admin {
 			<div class="mtfp-bottom-grid">
 				<!-- Card: CSV Import -->
 				<div class="mtfp-card mtfp-card-import">
-					<h2><?php esc_html_e( 'Import CSV', 'manual-translations-for-polylang' ); ?></h2>
+					<h2><?php esc_html_e( 'Import CSV', 'kzdev-string-translations-for-polylang' ); ?></h2>
 					<form method="post" enctype="multipart/form-data" action="">
 						<?php wp_nonce_field( 'mtfp_csv_import', 'mtfp_import_nonce' ); ?>
 						<input type="hidden" name="mtfp_import_action" value="1" />
 
 					<div class="mtfp-form-group">
-						<label for="import_file"><?php esc_html_e( 'Select CSV File', 'manual-translations-for-polylang' ); ?></label>
+						<label for="import_file"><?php esc_html_e( 'Select CSV File', 'kzdev-string-translations-for-polylang' ); ?></label>
 						<div class="mtfp-file-dropzone" id="mtfp-file-dropzone">
 							<input type="file" id="import_file" name="import_file" accept=".csv" />
 							<div class="mtfp-dropzone-content">
 								<span class="dashicons dashicons-cloud-upload mtfp-dropzone-icon"></span>
-								<p class="mtfp-dropzone-title"><?php esc_html_e( 'Drag & drop your CSV file here', 'manual-translations-for-polylang' ); ?></p>
-								<p class="mtfp-dropzone-subtitle"><?php esc_html_e( 'or', 'manual-translations-for-polylang' ); ?></p>
+								<p class="mtfp-dropzone-title"><?php esc_html_e( 'Drag & drop your CSV file here', 'kzdev-string-translations-for-polylang' ); ?></p>
+								<p class="mtfp-dropzone-subtitle"><?php esc_html_e( 'or', 'kzdev-string-translations-for-polylang' ); ?></p>
 								<button type="button" class="button mtfp-btn-secondary mtfp-dropzone-browse">
 									<span class="dashicons dashicons-media-spreadsheet"></span>
-									<?php esc_html_e( 'Browse Files', 'manual-translations-for-polylang' ); ?>
+									<?php esc_html_e( 'Browse Files', 'kzdev-string-translations-for-polylang' ); ?>
 								</button>
 							</div>
 							<div class="mtfp-dropzone-file" hidden>
 								<span class="dashicons dashicons-yes-alt"></span>
 								<span class="mtfp-dropzone-filename"></span>
-								<button type="button" class="mtfp-dropzone-remove" aria-label="<?php esc_attr_e( 'Remove file', 'manual-translations-for-polylang' ); ?>">&times;</button>
+								<button type="button" class="mtfp-dropzone-remove" aria-label="<?php esc_attr_e( 'Remove file', 'kzdev-string-translations-for-polylang' ); ?>">&times;</button>
 							</div>
 							<p class="mtfp-dropzone-error" role="alert" hidden></p>
 						</div>
 					</div>
 
 						<div class="mtfp-form-group">
-							<label><?php esc_html_e( 'Import Mode', 'manual-translations-for-polylang' ); ?></label>
+							<label><?php esc_html_e( 'Import Mode', 'kzdev-string-translations-for-polylang' ); ?></label>
 							<div class="mtfp-radio-group">
 								<label class="mtfp-radio-label">
 									<input type="radio" name="import_mode" value="merge" checked />
-									<span><strong><?php esc_html_e( 'Merge', 'manual-translations-for-polylang' ); ?></strong> – <?php esc_html_e( 'Keep existing records; add new ones and update matches.', 'manual-translations-for-polylang' ); ?></span>
+									<span><strong><?php esc_html_e( 'Merge', 'kzdev-string-translations-for-polylang' ); ?></strong> – <?php esc_html_e( 'Keep existing records; add new ones and update matches.', 'kzdev-string-translations-for-polylang' ); ?></span>
 								</label>
 								<label class="mtfp-radio-label">
 									<input type="radio" name="import_mode" value="overwrite" />
-									<span><strong><?php esc_html_e( 'Overwrite', 'manual-translations-for-polylang' ); ?></strong> – <?php esc_html_e( 'Erase all current translations and replace with CSV values.', 'manual-translations-for-polylang' ); ?></span>
+									<span><strong><?php esc_html_e( 'Overwrite', 'kzdev-string-translations-for-polylang' ); ?></strong> – <?php esc_html_e( 'Erase all current translations and replace with CSV values.', 'kzdev-string-translations-for-polylang' ); ?></span>
 								</label>
 							</div>
 						</div>
 
 						<button type="submit" class="button mtfp-btn-secondary full-width">
 							<span class="dashicons dashicons-upload"></span>
-							<?php esc_html_e( 'Upload and Import', 'manual-translations-for-polylang' ); ?>
+							<?php esc_html_e( 'Upload and Import', 'kzdev-string-translations-for-polylang' ); ?>
 						</button>
 					</form>
 				</div>
 
 				<!-- Card: CSV Export All -->
 				<div class="mtfp-card mtfp-card-export-all">
-					<h2><?php esc_html_e( 'Export CSV', 'manual-translations-for-polylang' ); ?></h2>
+					<h2><?php esc_html_e( 'Export CSV', 'kzdev-string-translations-for-polylang' ); ?></h2>
 					<p class="description" style="margin-bottom: 20px;">
-						<?php esc_html_e( 'Download a backup of all manual translations in CSV format.', 'manual-translations-for-polylang' ); ?>
+						<?php esc_html_e( 'Download a backup of all manual translations in CSV format.', 'kzdev-string-translations-for-polylang' ); ?>
 					</p>
 					<form method="post" action="">
 						<?php wp_nonce_field( 'mtfp_csv_export', 'mtfp_export_nonce' ); ?>
 						<input type="hidden" name="mtfp_export_action" value="1" />
 						<button type="submit" class="button mtfp-btn-primary full-width">
 							<span class="dashicons dashicons-download"></span>
-							<?php esc_html_e( 'Export All to CSV', 'manual-translations-for-polylang' ); ?>
+							<?php esc_html_e( 'Export All to CSV', 'kzdev-string-translations-for-polylang' ); ?>
 						</button>
 					</form>
 				</div>
 
 				<!-- Card: AI Translation Settings -->
 				<div class="mtfp-card mtfp-card-ai-settings">
-					<h2><?php esc_html_e( 'AI Translation Settings', 'manual-translations-for-polylang' ); ?></h2>
+					<h2><?php esc_html_e( 'AI Translation Settings', 'kzdev-string-translations-for-polylang' ); ?></h2>
 					<form id="mtfp-ai-settings-form" method="post" action="">
 						<?php
 						$ai_settings = get_option( 'manual_translations_ai_settings', array(
@@ -1502,34 +1500,34 @@ class Manual_Translations_Admin {
 						) );
 						?>
 						<div class="mtfp-form-group">
-							<label for="mtfp-ai-provider"><?php esc_html_e( 'Translation Provider', 'manual-translations-for-polylang' ); ?></label>
+							<label for="mtfp-ai-provider"><?php esc_html_e( 'Translation Provider', 'kzdev-string-translations-for-polylang' ); ?></label>
 							<select id="mtfp-ai-provider" name="provider" class="mtfp-select full-width">
-								<option value="none" <?php selected( $ai_settings['provider'], 'none' ); ?>><?php esc_html_e( 'None (Disabled)', 'manual-translations-for-polylang' ); ?></option>
-								<option value="browser" <?php selected( $ai_settings['provider'], 'browser' ); ?>><?php esc_html_e( 'Browser Built-in AI (Chrome / Edge)', 'manual-translations-for-polylang' ); ?></option>
-								<option value="openai" <?php selected( $ai_settings['provider'], 'openai' ); ?>><?php esc_html_e( 'OpenAI-Compatible API', 'manual-translations-for-polylang' ); ?></option>
+								<option value="none" <?php selected( $ai_settings['provider'], 'none' ); ?>><?php esc_html_e( 'None (Disabled)', 'kzdev-string-translations-for-polylang' ); ?></option>
+								<option value="browser" <?php selected( $ai_settings['provider'], 'browser' ); ?>><?php esc_html_e( 'Browser Built-in AI (Chrome / Edge)', 'kzdev-string-translations-for-polylang' ); ?></option>
+								<option value="openai" <?php selected( $ai_settings['provider'], 'openai' ); ?>><?php esc_html_e( 'OpenAI-Compatible API', 'kzdev-string-translations-for-polylang' ); ?></option>
 							</select>
 						</div>
 
 						<div class="mtfp-ai-openai-fields" style="<?php echo 'openai' === $ai_settings['provider'] ? '' : 'display: none;'; ?>">
 							<div class="mtfp-form-group">
-								<label for="mtfp-openai-url"><?php esc_html_e( 'API URL Base', 'manual-translations-for-polylang' ); ?></label>
+								<label for="mtfp-openai-url"><?php esc_html_e( 'API URL Base', 'kzdev-string-translations-for-polylang' ); ?></label>
 								<input type="url" id="mtfp-openai-url" name="openai_url" class="mtfp-input full-width" value="<?php echo esc_url( $ai_settings['openai_url'] ); ?>" placeholder="https://api.openai.com/v1/chat/completions" />
 							</div>
 
 							<div class="mtfp-form-group">
-								<label for="mtfp-openai-key"><?php esc_html_e( 'API Key (Optional)', 'manual-translations-for-polylang' ); ?></label>
-								<input type="password" id="mtfp-openai-key" name="openai_key" class="mtfp-input full-width" value="<?php echo esc_attr( $ai_settings['openai_key'] ); ?>" placeholder="<?php esc_attr_e( 'sk-... (leave empty if local/none required)', 'manual-translations-for-polylang' ); ?>" autocomplete="new-password" />
+								<label for="mtfp-openai-key"><?php esc_html_e( 'API Key (Optional)', 'kzdev-string-translations-for-polylang' ); ?></label>
+								<input type="password" id="mtfp-openai-key" name="openai_key" class="mtfp-input full-width" value="<?php echo esc_attr( $ai_settings['openai_key'] ); ?>" placeholder="<?php esc_attr_e( 'sk-... (leave empty if local/none required)', 'kzdev-string-translations-for-polylang' ); ?>" autocomplete="new-password" />
 							</div>
 
 							<div class="mtfp-form-group">
-								<label for="mtfp-openai-model"><?php esc_html_e( 'Model Name', 'manual-translations-for-polylang' ); ?></label>
+								<label for="mtfp-openai-model"><?php esc_html_e( 'Model Name', 'kzdev-string-translations-for-polylang' ); ?></label>
 								<input type="text" id="mtfp-openai-model" name="openai_model" class="mtfp-input full-width" value="<?php echo esc_attr( $ai_settings['openai_model'] ); ?>" placeholder="gpt-4o-mini" />
 							</div>
 						</div>
 
 						<button type="submit" class="button mtfp-btn-primary full-width">
 							<span class="dashicons dashicons-saved"></span>
-							<?php esc_html_e( 'Save AI Settings', 'manual-translations-for-polylang' ); ?>
+							<?php esc_html_e( 'Save AI Settings', 'kzdev-string-translations-for-polylang' ); ?>
 						</button>
 					</form>
 				</div>
@@ -1539,22 +1537,22 @@ class Manual_Translations_Admin {
 			<div id="mtfp-scan-modal" class="mtfp-modal-overlay">
 				<div class="mtfp-modal-content">
 					<div class="mtfp-modal-header">
-						<h2><?php esc_html_e( 'Scan for Untranslated Strings', 'manual-translations-for-polylang' ); ?></h2>
+						<h2><?php esc_html_e( 'Scan for Untranslated Strings', 'kzdev-string-translations-for-polylang' ); ?></h2>
 						<button type="button" class="mtfp-modal-close" id="mtfp-scan-modal-close">&times;</button>
 					</div>
 					<div class="mtfp-modal-body">
 						<div class="mtfp-form-group">
-							<label for="mtfp-modal-scan-type" style="display: block; font-weight: 500; margin-bottom: 6px; font-size: 13px;"><?php esc_html_e( 'What would you like to scan?', 'manual-translations-for-polylang' ); ?></label>
+							<label for="mtfp-modal-scan-type" style="display: block; font-weight: 500; margin-bottom: 6px; font-size: 13px;"><?php esc_html_e( 'What would you like to scan?', 'kzdev-string-translations-for-polylang' ); ?></label>
 							<select id="mtfp-modal-scan-type" class="mtfp-select full-width">
-								<option value="theme"><?php esc_html_e( 'Active Theme & Child Theme', 'manual-translations-for-polylang' ); ?></option>
-								<option value="all-plugins"><?php esc_html_e( 'All Installed Plugins', 'manual-translations-for-polylang' ); ?></option>
-								<option value="specific-plugin"><?php esc_html_e( 'Specific Plugin...', 'manual-translations-for-polylang' ); ?></option>
-								<option value="wp-content"><?php esc_html_e( 'WordPress Content (Pages, Posts & Templates)', 'manual-translations-for-polylang' ); ?></option>
+								<option value="theme"><?php esc_html_e( 'Active Theme & Child Theme', 'kzdev-string-translations-for-polylang' ); ?></option>
+								<option value="all-plugins"><?php esc_html_e( 'All Installed Plugins', 'kzdev-string-translations-for-polylang' ); ?></option>
+								<option value="specific-plugin"><?php esc_html_e( 'Specific Plugin...', 'kzdev-string-translations-for-polylang' ); ?></option>
+								<option value="wp-content"><?php esc_html_e( 'WordPress Content (Pages, Posts & Templates)', 'kzdev-string-translations-for-polylang' ); ?></option>
 							</select>
 						</div>
 
 						<div id="mtfp-modal-specific-plugin-group" class="mtfp-form-group" style="display: none; margin-top: 16px;">
-							<label for="mtfp-modal-specific-plugin" style="display: block; font-weight: 500; margin-bottom: 6px; font-size: 13px;"><?php esc_html_e( 'Select Plugin to Scan', 'manual-translations-for-polylang' ); ?></label>
+							<label for="mtfp-modal-specific-plugin" style="display: block; font-weight: 500; margin-bottom: 6px; font-size: 13px;"><?php esc_html_e( 'Select Plugin to Scan', 'kzdev-string-translations-for-polylang' ); ?></label>
 							<select id="mtfp-modal-specific-plugin" class="mtfp-select full-width">
 								<?php
 								if ( ! function_exists( 'get_plugins' ) ) {
@@ -1564,7 +1562,7 @@ class Manual_Translations_Admin {
 								foreach ( $all_plugins as $plugin_file => $plugin_data ) {
 									$dir = dirname( $plugin_file );
 									if ( '.' !== $dir && '' !== $dir ) {
-										if ( strpos( $plugin_file, 'manual-translations-for-polylang' ) === false ) {
+										if ( strpos( $plugin_file, 'kzdev-string-translations-for-polylang' ) === false ) {
 											echo '<option value="' . esc_attr( $dir ) . '">' . esc_html( $plugin_data['Name'] ) . '</option>';
 										}
 									}
@@ -1574,12 +1572,12 @@ class Manual_Translations_Admin {
 						</div>
 
 						<p class="description" style="margin-top: 16px; margin-bottom: 20px; font-size: 13px; color: var(--mtfp-text-muted);">
-							<?php esc_html_e( 'Scanning will extract code-level translation strings or post content that is currently missing from your manual translation catalog.', 'manual-translations-for-polylang' ); ?>
+							<?php esc_html_e( 'Scanning will extract code-level translation strings or post content that is currently missing from your manual translation catalog.', 'kzdev-string-translations-for-polylang' ); ?>
 						</p>
 
 						<button type="button" class="button mtfp-btn-primary full-width" id="mtfp-modal-start-scan-btn">
 							<span class="dashicons dashicons-search"></span>
-							<?php esc_html_e( 'Start Scan', 'manual-translations-for-polylang' ); ?>
+							<?php esc_html_e( 'Start Scan', 'kzdev-string-translations-for-polylang' ); ?>
 						</button>
 					</div>
 				</div>
@@ -1588,176 +1586,4 @@ class Manual_Translations_Admin {
 		<?php
 	}
 
-	/**
-	 * Inject inline style block in admin head to completely disable focus outlines on all buttons.
-	 */
-	public function inject_admin_focus_reset() {
-		?>
-		<style id="mtfp-admin-focus-reset">
-		body.wp-core-ui .button:focus,
-		body.wp-core-ui .button-primary:focus,
-		body.wp-core-ui .page-title-action:focus,
-		body.wp-core-ui button:focus,
-		body.wp-core-ui input[type="button"]:focus,
-		body.wp-core-ui input[type="submit"]:focus,
-		body.wp-core-ui .mtfp-post-translate-btn:focus,
-		body.wp-core-ui .mtfp-term-translate-btn:focus,
-		body.wp-core-ui .mtfp-post-retranslate-btn:focus,
-		body.wp-core-ui .mtfp-term-retranslate-btn:focus {
-			outline: none !important;
-			outline-offset: 0 !important;
-			box-shadow: none !important;
-		}
-		body.wp-core-ui .button:active,
-		body.wp-core-ui .button-primary:active,
-		body.wp-core-ui .page-title-action:active,
-		body.wp-core-ui button:active,
-		body.wp-core-ui input[type="button"]:active,
-		body.wp-core-ui input[type="submit"]:active,
-		body.wp-core-ui .mtfp-post-translate-btn:active,
-		body.wp-core-ui .mtfp-term-translate-btn:active,
-		body.wp-core-ui .mtfp-post-retranslate-btn:active,
-		body.wp-core-ui .mtfp-term-retranslate-btn:active {
-			outline: none !important;
-			box-shadow: none !important;
-		}
-
-		/* Enforce display layout under all conditions to prevent WP style overrides from breaking flex */
-		.mtfp-page-title-row .page-title-action,
-		body.wp-admin .mtfp-page-title-row .page-title-action,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action {
-			display: inline-flex !important;
-			align-items: center !important;
-			justify-content: center !important;
-			gap: 6px !important;
-			padding: 6px 14px !important;
-			border-radius: 8px !important;
-			font-weight: 600 !important;
-			font-size: 13px !important;
-			cursor: pointer !important;
-			text-decoration: none !important;
-			height: auto !important;
-			line-height: 1.5 !important;
-		}
-
-		/* Specific Title Row Buttons Overrides to maintain colors on hover/focus/active */
-		/* 1. Add New Translation */
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row {
-			background: #6366f1 !important;
-			border-color: #6366f1 !important;
-			color: #ffffff !important;
-			margin-right: 8px !important;
-			box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15) !important;
-			outline: none !important;
-		}
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus-visible {
-			background: #6366f1 !important;
-			border-color: #6366f1 !important;
-			color: #ffffff !important;
-			outline: none !important;
-			box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15) !important;
-		}
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:hover,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:focus:hover,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-add-row:active {
-			background: #4f46e5 !important;
-			border-color: #4f46e5 !important;
-			color: #ffffff !important;
-			outline: none !important;
-			box-shadow: none !important;
-		}
-
-		/* 2. Auto Translate */
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate {
-			background: #8b5cf6 !important;
-			border-color: #8b5cf6 !important;
-			color: #ffffff !important;
-			margin-right: 8px !important;
-			box-shadow: 0 2px 4px rgba(139, 92, 246, 0.15) !important;
-			outline: none !important;
-		}
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus-visible {
-			background: #8b5cf6 !important;
-			border-color: #8b5cf6 !important;
-			color: #ffffff !important;
-			outline: none !important;
-			box-shadow: 0 2px 4px rgba(139, 92, 246, 0.15) !important;
-		}
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:hover,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:focus:hover,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-auto-translate:active {
-			background: #7c3aed !important;
-			border-color: #7c3aed !important;
-			color: #ffffff !important;
-			outline: none !important;
-			box-shadow: none !important;
-		}
-
-		/* 3. Scan & Import */
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal {
-			background: #0ea5e9 !important;
-			border-color: #0ea5e9 !important;
-			color: #ffffff !important;
-			margin-right: 8px !important;
-			box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15) !important;
-			outline: none !important;
-		}
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus-visible {
-			background: #0ea5e9 !important;
-			border-color: #0ea5e9 !important;
-			color: #ffffff !important;
-			outline: none !important;
-			box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15) !important;
-		}
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
-		.mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
-		body.wp-admin .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:hover,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:focus:hover,
-		body.wp-core-ui .mtfp-page-title-row .page-title-action.mtfp-trigger-scan-modal:active {
-			background: #0284c7 !important;
-			border-color: #0284c7 !important;
-			color: #ffffff !important;
-			outline: none !important;
-			box-shadow: none !important;
-		}
-		</style>
-		<?php
-	}
 }
